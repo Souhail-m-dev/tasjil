@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition, useCallback } from "react";
+import { useMemo, useRef, useState, useTransition, useCallback } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useForm, Controller, type SubmitHandler } from "react-hook-form";
@@ -68,6 +68,7 @@ export function RegistrationForm({
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState(initialSeminarId ? 1 : 0);
   const [isPending, startTransition] = useTransition();
+  const submittingRef = useRef(false);
 
   const form = useForm<RegistrationInput>({
     resolver: zodResolver(registrationSchema),
@@ -135,6 +136,8 @@ export function RegistrationForm({
   );
 
   const onSubmit: SubmitHandler<RegistrationInput> = (data) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     startTransition(async () => {
       const supabase = createClient();
       const payload = normalizeRegistration(data);
@@ -153,6 +156,7 @@ export function RegistrationForm({
           ];
       const { error } = await supabase.from("registrations").insert(inserts);
       if (error) {
+        submittingRef.current = false;
         toast.error("Inscription échouée. Réessayez ou contactez-nous.");
         console.error(error);
         return;
