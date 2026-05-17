@@ -208,7 +208,7 @@ export default async function MerciPage({
             {(
               Object.entries(paymentDetails) as [
                 PaymentMethod,
-                { icon: React.ComponentType<{ className?: string }>; title: string; value: string },
+                { icon: React.ComponentType<{ className?: string }>; title: string; value: string; note?: string },
               ][]
             ).map(([method, detail]) => {
               const Icon = detail.icon;
