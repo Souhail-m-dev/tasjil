@@ -1,26 +1,204 @@
 @import "tailwindcss";
 
+/*
+  Palette derived from /public/design.png
+  Deep greens: #202819, #3C4130, #546B43
+  Sands:       #E3CC9E, #E4D4B7, #E5DFD6
+  Creams:      #F2EADF, #F0E8DD, #FBEFDF
+  Browns:      #23170E, #32241B, #504035
+*/
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink-900: #202819;
+  --ink-800: #3c4130;
+  --ink-600: #546b43;
+
+  --sand-300: #e5dfd6;
+  --sand-400: #e4d4b7;
+  --sand-500: #e3cc9e;
+
+  --cream-50: #fbefdf;
+  --cream-100: #f2eadf;
+  --cream-200: #f0e8dd;
+
+  --bark-900: #23170e;
+  --bark-800: #32241b;
+  --bark-700: #504035;
+
+  --background: var(--cream-100);
+  --foreground: var(--ink-900);
+  --muted: var(--sand-300);
+  --muted-foreground: #5e6353;
+  --border: #d6cfc0;
+  --primary: var(--ink-800);
+  --primary-foreground: var(--cream-50);
+  --accent: var(--sand-500);
+  --accent-foreground: var(--bark-800);
+  --ring: var(--ink-600);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-ring: var(--ring);
+
+  --color-ink-900: var(--ink-900);
+  --color-ink-800: var(--ink-800);
+  --color-ink-600: var(--ink-600);
+  --color-sand-300: var(--sand-300);
+  --color-sand-400: var(--sand-400);
+  --color-sand-500: var(--sand-500);
+  --color-cream-50: var(--cream-50);
+  --color-cream-100: var(--cream-100);
+  --color-cream-200: var(--cream-200);
+  --color-bark-700: var(--bark-700);
+  --color-bark-800: var(--bark-800);
+  --color-bark-900: var(--bark-900);
+
+  --color-surface: var(--cream-200);
+  --color-surface-container: var(--cream-100);
+  --color-surface-container-high: #e9e1d2;
+  --color-surface-container-low: var(--cream-50);
+  --color-on-surface: var(--ink-900);
+  --color-on-surface-variant: #5e6353;
+  --color-outline: #98927f;
+  --color-outline-variant: var(--border);
+  --color-error: #a8321b;
+  --color-on-error: #ffffff;
+
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-serif: var(--font-serif);
+  --font-script: var(--font-script);
+  --font-arabic: var(--font-arabic);
+
+  --animate-slide-in: slide-in-right 380ms cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-fade-in: fade-in 320ms ease-out;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@utility text-display-xl {
+  font-size: 56px;
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+@utility text-display-lg {
+  font-size: 44px;
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  font-weight: 700;
+}
+
+@utility text-headline-lg {
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 700;
+}
+
+@utility text-headline-lg-mobile {
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: 700;
+}
+
+@utility text-headline-md {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+
+@utility text-title-lg {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+
+@utility text-body-lg {
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 400;
+}
+
+@utility text-body-md {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+
+@utility text-label-md {
+  font-size: 13px;
+  line-height: 20px;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+@utility text-calligraphy-decorative {
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 400;
+}
+
 body {
-  background: var(--background);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-display), "Bodoni Moda", "Playfair Display", serif;
+  letter-spacing: -0.01em;
+}
+
+.font-serif {
+  font-family: var(--font-serif), "Libre Baskerville", "Cormorant Garamond", serif;
+}
+
+.font-script {
+  font-family: var(--font-script), cursive;
+}
+
+.font-arabic {
+  font-family: var(--font-arabic), serif;
+  direction: rtl;
+}
+
+.outlined-display {
+  font-family: var(--font-display), "Bodoni Moda", serif;
+  color: transparent;
+  -webkit-text-stroke: 1px currentColor;
+  text-shadow: none;
+}
+
+::selection {
+  background-color: var(--sand-500);
+  color: var(--ink-900);
 }

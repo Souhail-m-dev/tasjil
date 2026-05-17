@@ -1,0 +1,163 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
+  public: {
+    Tables: {
+      admins: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          role: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          role?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          role?: string | null
+        }
+        Relationships: []
+      }
+      registrations: {
+        Row: {
+          created_at: string | null
+          email: string
+          first_name: string
+          gender: string | null
+          id: string
+          last_name: string
+          notes: string | null
+          payment_method: string | null
+          payment_status: string | null
+          seminar_id: string | null
+          telegram_handle: string | null
+          zoom_email: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          first_name: string
+          gender?: string | null
+          id?: string
+          last_name: string
+          notes?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          seminar_id?: string | null
+          telegram_handle?: string | null
+          zoom_email?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          first_name?: string
+          gender?: string | null
+          id?: string
+          last_name?: string
+          notes?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          seminar_id?: string | null
+          telegram_handle?: string | null
+          zoom_email?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registrations_seminar_id_fkey"
+            columns: ["seminar_id"]
+            isOneToOne: false
+            referencedRelation: "seminars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seminars: {
+        Row: {
+          author: string | null
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          has_notes: boolean | null
+          has_pdf_support: boolean | null
+          has_weekly_quiz: boolean | null
+          id: string
+          is_recorded: boolean | null
+          location: string | null
+          price_eur: number | null
+          sessions_per_week: number | null
+          slug: string
+          start_date: string | null
+          title: string
+          title_ar: string | null
+          zoom: boolean | null
+        }
+        Insert: {
+          author?: string | null
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          has_notes?: boolean | null
+          has_pdf_support?: boolean | null
+          has_weekly_quiz?: boolean | null
+          id?: string
+          is_recorded?: boolean | null
+          location?: string | null
+          price_eur?: number | null
+          sessions_per_week?: number | null
+          slug: string
+          start_date?: string | null
+          title: string
+          title_ar?: string | null
+          zoom?: boolean | null
+        }
+        Update: {
+          author?: string | null
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          has_notes?: boolean | null
+          has_pdf_support?: boolean | null
+          has_weekly_quiz?: boolean | null
+          id?: string
+          is_recorded?: boolean | null
+          location?: string | null
+          price_eur?: number | null
+          sessions_per_week?: number | null
+          slug?: string
+          start_date?: string | null
+          title?: string
+          title_ar?: string | null
+          zoom?: boolean | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}

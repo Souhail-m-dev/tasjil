@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tasjil — Inscription Séminaires
 
-## Getting Started
+Next.js 16 + Supabase app for seminar registration. Public registration flow, admin dashboard for managing seminars and inscriptions.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 (App Router, Turbopack)
+- React 19
+- TypeScript
+- Supabase (auth, Postgres) via `@supabase/ssr`
+- Tailwind CSS 4
+- React Hook Form + Zod
+- shadcn-style components (Radix-free, local in `src/components/ui`)
+
+## Routes
+
+- `/` — landing
+- `/inscription` — public registration form
+- `/inscription/merci` — confirmation + payment instructions
+- `/admin/login` — admin login
+- `/admin` — dashboard
+- `/admin/inscriptions` — registrations table
+- `/admin/seminaires` — seminars management
+
+## Local development
+
+Requirements: Node 20+, npm.
 
 ```bash
+npm install
+cp .env.example .env.local   # fill values
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open <http://localhost:3000>.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Key | Description |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable (anon) key |
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+| Command | Action |
+|---|---|
+| `npm run dev` | Dev server (Turbopack) |
+| `npm run build` | Production build |
+| `npm run start` | Start production server |
+| `npm run lint` | ESLint |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deployment — DigitalOcean App Platform
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Connect this GitHub repo to DigitalOcean App Platform.
+2. Detected as Next.js. Set:
+   - Build command: `npm run build`
+   - Run command: `npm run start`
+   - HTTP port: `3000`
+3. Add the env vars listed above (mark them as runtime + build-time as needed).
+4. Deploy.
 
-## Deploy on Vercel
+## Project structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/
+├── app/                 # routes (App Router)
+├── components/          # UI + feature components
+└── lib/
+    ├── schemas/         # zod schemas
+    ├── supabase/        # client / server / proxy helpers
+    └── types/           # db types
+```
