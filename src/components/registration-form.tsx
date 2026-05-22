@@ -19,6 +19,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { formatDate, formatPrice } from "@/lib/format";
+import { sendConfirmationEmail } from "@/app/actions/send-confirmation-email";
 import { Field, inputClass } from "@/components/ui/field";
 import { RadioCard } from "@/components/ui/radio-card";
 import { FlyerViewer } from "@/components/flyer-viewer";
@@ -154,13 +155,18 @@ export function RegistrationForm({
               payment_status: "pending",
             },
           ];
-      const { error } = await supabase.from("registrations").insert(inserts);
+      const { data: insertedData, error } = await supabase.from("registrations").insert(inserts).select("id");
       if (error) {
         submittingRef.current = false;
         toast.error("Inscription échouée. Réessayez ou contactez-nous.");
         console.error(error);
         return;
       }
+
+      if (insertedData) {
+        void sendConfirmationEmail({ registrationIds: insertedData.map((r) => r.id) });
+      }
+
       router.push(
         `/inscription/merci?seminar=${
           isBothSeminarsSelection(data.seminar_id)
@@ -177,43 +183,44 @@ export function RegistrationForm({
     <form
       onSubmit={handleSubmit(onSubmit)}
       onKeyDown={onKeyDown}
-      className="relative flex min-h-screen w-full flex-col"
+      className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col"
     >
       {/* Top progress bar */}
-      <div className="fixed inset-x-0 top-0 z-30 h-1 bg-[#e4d4b7]">
+      <div className="h-1 w-full shrink-0 bg-[#e4d4b7]">
         <div
           className="h-full bg-[#546b43] transition-[width] duration-500 ease-out"
           style={{ width: `${progress}%` }}
         />
       </div>
 
-      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-3 pb-8 pt-16 sm:px-6 sm:pb-12 sm:pt-20 md:pt-28">
-        <div className="rounded-2xl border border-[#d6cfc0] bg-[#fbefdf] p-4 shadow-[0_14px_28px_rgba(32,40,25,0.08)] sm:p-6 md:p-8 lg:p-10">
-        <header className="flex items-center justify-between text-[10px] uppercase tracking-[0.18em] text-[#5e6353] sm:text-xs sm:tracking-[0.25em]">
-          <span>
-            Étape {stepIndex + 1} / {totalSteps}
-          </span>
-          {step.optional && (
-            <button
-              type="button"
-              onClick={skipOptional}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#cdc5b3] px-3 py-1.5 text-[10px] tracking-[0.16em] text-[#3c4130] hover:border-[#546b43] transition"
-            >
-              Passer
-              <SkipForward className="size-3" />
-            </button>
-          )}
-        </header>
+      <div className="relative flex w-full items-center justify-center px-4 pt-4 sm:px-8 sm:pt-5">
+        <span className="font-display text-lg tracking-wide text-[#3c4130] sm:text-2xl">
+          Étape <span className="font-semibold text-[#202819]">{stepIndex + 1}</span>
+          <span className="mx-1 text-[#98927f]">/</span>
+          <span>{totalSteps}</span>
+        </span>
+        {step.optional && (
+          <button
+            type="button"
+            onClick={skipOptional}
+            className="absolute right-4 inline-flex items-center gap-1.5 rounded-full border border-[#cdc5b3] px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-[#3c4130] hover:border-[#546b43] transition sm:right-8"
+          >
+            Passer
+            <SkipForward className="size-3" />
+          </button>
+        )}
+      </div>
 
+      <div className="flex min-h-0 w-full flex-1 items-center justify-center overflow-y-auto p-4 sm:p-8">
         <div
           key={stepIndex}
-          className="flex flex-1 flex-col items-center justify-center gap-6 py-6 animate-[var(--animate-slide-in)] sm:gap-8 sm:py-12"
+          className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 animate-[var(--animate-slide-in)] sm:gap-8"
         >
-          <h1 className="max-w-2xl text-center font-display text-[1.6rem] leading-[1.15] text-[#202819] sm:text-3xl md:text-5xl">
+          <h1 className="w-full text-center font-display text-[1.6rem] leading-[1.15] text-[#202819] sm:text-3xl md:text-5xl">
             {step.title}
           </h1>
 
-          <div className="w-full max-w-2xl">
+          <div className="w-full">
             <StepContent
               step={step}
               control={control}
@@ -225,15 +232,18 @@ export function RegistrationForm({
             />
           </div>
         </div>
+      </div>
 
-        <NavButtons
-          isFirst={stepIndex === 0}
-          isReview={step.kind === "review"}
-          isPending={isPending}
-          canSubmit={formState.isValid}
-          onBack={goBack}
-          onNext={goNext}
-        />
+      <div className="w-full shrink-0 border-t border-[#d6cfc0] bg-[#fbefdf]/95 px-4 py-3 backdrop-blur sm:px-8 sm:py-4">
+        <div className="mx-auto w-full max-w-2xl">
+          <NavButtons
+            isFirst={stepIndex === 0}
+            isReview={step.kind === "review"}
+            isPending={isPending}
+            canSubmit={formState.isValid}
+            onBack={goBack}
+            onNext={goNext}
+          />
         </div>
       </div>
     </form>
@@ -538,7 +548,7 @@ function NavButtons({
   onNext: () => void;
 }) {
   return (
-    <div className="flex flex-col-reverse gap-2.5 pt-6 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:pt-8">
+    <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
       <button
         type="button"
         onClick={onBack}

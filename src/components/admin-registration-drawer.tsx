@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Loader2, Save, Trash2, X } from "lucide-react";
+import { Loader2, Mail, Save, Trash2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { sendConfirmationEmail } from "@/app/actions/send-confirmation-email";
+import { formatDate } from "@/lib/format";
 import { AdminRegistrationFields } from "@/components/admin-registration-fields";
 import {
   adminRegistrationSchema,
@@ -19,6 +21,7 @@ import type { Database } from "@/lib/types/db";
 
 type Registration = Database["public"]["Tables"]["registrations"]["Row"] & {
   seminars?: Database["public"]["Tables"]["seminars"]["Row"] | null;
+  confirmation_email_sent_at?: string | null;
 };
 type Seminar = Database["public"]["Tables"]["seminars"]["Row"];
 
@@ -37,6 +40,7 @@ export function AdminRegistrationDrawer({
   const [mounted, setMounted] = useState(false);
   const [isSaving, startSaving] = useTransition();
   const [isDeleting, startDeleting] = useTransition();
+  const [isSendingEmail, startSendingEmail] = useTransition();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -121,24 +125,40 @@ export function AdminRegistrationDrawer({
     });
   };
 
+  const onSendEmail = () => {
+    if (!registration) return;
+    startSendingEmail(async () => {
+      const { success } = await sendConfirmationEmail({
+        registrationIds: [registration.id],
+        force: true,
+      });
+      if (success) {
+        toast.success("Email envoyé");
+        router.refresh();
+      } else {
+        toast.error("Échec de l'envoi.");
+      }
+    });
+  };
+
   const overlay = (
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Modifier inscription"
-      className="fixed inset-0 z-[9999] flex justify-end bg-[#0e0a06]/55 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-end justify-end bg-[#0e0a06]/55 backdrop-blur-sm sm:items-stretch"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex h-full w-full max-w-2xl flex-col bg-[#fbefdf] shadow-[0_30px_60px_rgba(0,0,0,0.35)]"
+        className="flex max-h-[92dvh] w-full max-w-2xl flex-col rounded-t-2xl bg-[#fbefdf] shadow-[0_-20px_50px_rgba(0,0,0,0.35)] sm:max-h-none sm:h-full sm:rounded-none sm:shadow-[0_30px_60px_rgba(0,0,0,0.35)]"
       >
-        <header className="flex items-start justify-between gap-3 border-b border-[#d6cfc0] bg-[#f2eadf] px-5 py-4">
+        <header className="flex items-start justify-between gap-3 border-b border-[#d6cfc0] bg-[#f2eadf] px-4 py-3.5 sm:px-5 sm:py-4">
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-[0.28em] text-[#546b43]">
               Inscription
             </p>
-            <h2 className="mt-0.5 truncate font-display text-xl text-[#202819]">
+            <h2 className="mt-0.5 truncate font-display text-lg text-[#202819] sm:text-xl">
               {registration.first_name} {registration.last_name}
             </h2>
             <p className="truncate text-[12px] text-[#5e6353]">{registration.email}</p>
@@ -147,14 +167,14 @@ export function AdminRegistrationDrawer({
             type="button"
             onClick={onClose}
             aria-label="Fermer"
-            className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-[#cdc5b3] bg-[#fbefdf] text-[#3c4130] transition hover:border-[#546b43]"
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-[#cdc5b3] bg-[#fbefdf] text-[#3c4130] transition hover:border-[#546b43] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40"
           >
-            <X className="size-4" />
+            <X className="size-5" />
           </button>
         </header>
 
         <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="flex-1 overflow-y-auto px-5 py-5">
+          <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
             <AdminRegistrationFields
               control={form.control}
               errors={form.formState.errors}
@@ -162,25 +182,48 @@ export function AdminRegistrationDrawer({
             />
           </div>
 
-          <footer className="flex flex-col-reverse gap-2.5 border-t border-[#d6cfc0] bg-[#f2eadf] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-            <button
-              type="button"
-              onClick={onDelete}
-              disabled={isDeleting || isSaving}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#a8321b]/40 bg-[#fbe6df] px-4 text-sm font-medium text-[#a8321b] transition hover:border-[#a8321b] disabled:opacity-50"
-            >
-              {isDeleting ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Trash2 className="size-4" />
-              )}
-              {confirmDelete ? "Confirmer la suppression" : "Supprimer"}
-            </button>
+          <footer className="flex flex-col-reverse gap-4 border-t border-[#d6cfc0] bg-[#f2eadf] px-4 py-3.5 sm:flex-row sm:items-end sm:justify-between sm:px-5 sm:py-4">
+            <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:items-end sm:gap-3">
+              <button
+                type="button"
+                onClick={onDelete}
+                disabled={isDeleting || isSaving || isSendingEmail}
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#a8321b]/40 bg-[#fbe6df] px-4 text-sm font-medium text-[#a8321b] transition hover:border-[#a8321b] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#a8321b]/30 disabled:opacity-50 sm:w-auto"
+              >
+                {isDeleting ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Trash2 className="size-4" />
+                )}
+                {confirmDelete ? "Confirmer la suppression" : "Supprimer"}
+              </button>
+
+              <div className="flex flex-col gap-1">
+                {registration.confirmation_email_sent_at && (
+                  <span className="px-1 text-[10px] text-[#5e6353]">
+                    Dernier envoi : {formatDate(registration.confirmation_email_sent_at)}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={onSendEmail}
+                  disabled={isSendingEmail || isSaving || isDeleting}
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#cdc5b3] bg-[#fbefdf] px-4 text-sm font-medium text-[#3c4130] transition hover:border-[#546b43] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40 disabled:opacity-50 sm:w-auto"
+                >
+                  {isSendingEmail ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Mail className="size-4" />
+                  )}
+                  Envoyer email de confirmation
+                </button>
+              </div>
+            </div>
 
             <button
               type="submit"
-              disabled={isSaving || isDeleting}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#202819] px-6 text-sm font-medium text-[#fbefdf] shadow-[0_10px_22px_rgba(32,40,25,0.18)] transition hover:bg-[#3c4130] disabled:opacity-60"
+              disabled={isSaving || isDeleting || isSendingEmail}
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#202819] px-6 text-sm font-medium text-[#fbefdf] shadow-[0_10px_22px_rgba(32,40,25,0.18)] transition hover:bg-[#3c4130] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40 disabled:opacity-60 sm:w-auto"
             >
               {isSaving ? (
                 <Loader2 className="size-4 animate-spin" />

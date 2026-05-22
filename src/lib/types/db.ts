@@ -35,6 +35,8 @@ export type Database = {
       }
       registrations: {
         Row: {
+          confirmation_email_message_id: string | null
+          confirmation_email_sent_at: string | null
           created_at: string | null
           email: string
           first_name: string
@@ -49,6 +51,8 @@ export type Database = {
           zoom_email: string | null
         }
         Insert: {
+          confirmation_email_message_id?: string | null
+          confirmation_email_sent_at?: string | null
           created_at?: string | null
           email: string
           first_name: string
@@ -63,6 +67,8 @@ export type Database = {
           zoom_email?: string | null
         }
         Update: {
+          confirmation_email_message_id?: string | null
+          confirmation_email_sent_at?: string | null
           created_at?: string | null
           email?: string
           first_name?: string
