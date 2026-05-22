@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -34,15 +34,112 @@ export function AdminSidebar({ email }: { email: string | null }) {
   const isActive = (item: NavItem) =>
     item.matchPrefix ? pathname.startsWith(item.href) : pathname === item.href;
 
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  const renderNav = (onNavigate?: () => void) => (
+    <>
+      <div className="flex items-center justify-between border-b border-[#d6cfc0] px-5 py-4">
+        <Link
+          href="/admin"
+          onClick={onNavigate}
+          className="flex items-center gap-3"
+        >
+          <Image src="/logo.png" alt="" width={36} height={36} className="rounded-md" />
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.28em] text-[#546b43]">
+              Espace
+            </p>
+            <p className="font-display text-lg leading-tight text-[#202819]">
+              Administration
+            </p>
+          </div>
+        </Link>
+        {onNavigate && (
+          <button
+            type="button"
+            onClick={onNavigate}
+            aria-label="Fermer le menu"
+            className="inline-flex size-11 items-center justify-center rounded-md text-[#3c4130] transition hover:bg-[#efe4cc] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40"
+          >
+            <X className="size-5" />
+          </button>
+        )}
+      </div>
+
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <ul className="flex flex-col gap-1">
+          {navItems.map((item) => {
+            const active = isActive(item);
+            const Icon = item.icon;
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  onClick={onNavigate}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "group flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40",
+                    active
+                      ? "bg-[#546b43] text-[#fbefdf] shadow-[0_8px_18px_rgba(84,107,67,0.25)]"
+                      : "text-[#3c4130] hover:bg-[#efe4cc] hover:text-[#202819]",
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      "size-4 shrink-0 transition",
+                      active ? "text-[#fbefdf]" : "text-[#5e6353] group-hover:text-[#202819]",
+                    )}
+                  />
+                  <span>{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      <div className="border-t border-[#d6cfc0] px-4 py-4">
+        {email && (
+          <div className="mb-3 min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-[#546b43]">
+              Connecté
+            </p>
+            <p className="mt-0.5 truncate font-serif text-[13px] text-[#202819]">
+              {email}
+            </p>
+          </div>
+        )}
+        <AdminSignOut />
+      </div>
+    </>
+  );
+
   return (
     <>
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#d6cfc0] bg-[#f2eadf]/95 px-3 py-2.5 backdrop-blur lg:hidden">
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-[#d6cfc0] bg-[#f2eadf] px-3 py-2.5 lg:hidden">
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Ouvrir le menu"
-          className="inline-flex size-10 items-center justify-center rounded-lg border border-[#cdc5b3] bg-[#fbefdf] text-[#3c4130] transition hover:border-[#546b43]"
+          aria-expanded={open}
+          className="inline-flex size-11 items-center justify-center rounded-lg text-[#3c4130] transition hover:bg-[#efe4cc] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40"
         >
           <Menu className="size-5" />
         </button>
@@ -50,102 +147,31 @@ export function AdminSidebar({ email }: { email: string | null }) {
           <Image src="/logo.png" alt="" width={28} height={28} className="rounded" />
           <span className="font-display text-base text-[#202819]">Admin</span>
         </Link>
-        <div className="size-10" />
+        <div className="size-11" />
       </header>
 
-      {/* Backdrop (mobile) */}
+      {/* Mobile drawer */}
       {open && (
-        <button
-          type="button"
-          aria-label="Fermer le menu"
-          onClick={() => setOpen(false)}
-          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
-        />
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            onClick={() => setOpen(false)}
+            className="absolute inset-0 bg-black/45 animate-[var(--animate-fade-in)]"
+          />
+          <aside
+            style={{ backgroundColor: "#f7eedd" }}
+            className="absolute inset-y-0 left-0 z-10 flex w-[18rem] max-w-[85%] flex-col border-r border-[#d6cfc0] shadow-[0_20px_50px_rgba(32,40,25,0.25)]"
+          >
+            {renderNav(() => setOpen(false))}
+          </aside>
+        </div>
       )}
 
+      {/* Desktop rail */}
       <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-[#d6cfc0] bg-[#f7eedd] transition-transform lg:translate-x-0",
-          open ? "translate-x-0" : "-translate-x-full",
-          "lg:sticky lg:top-0 lg:h-screen lg:translate-x-0",
-        )}
+        style={{ backgroundColor: "#f7eedd" }}
+        className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-r border-[#d6cfc0] lg:flex"
       >
-        <div className="flex items-center justify-between border-b border-[#d6cfc0] px-5 py-5">
-          <Link
-            href="/admin"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-3"
-          >
-            <Image
-              src="/logo.png"
-              alt=""
-              width={36}
-              height={36}
-              className="rounded-md"
-            />
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.28em] text-[#546b43]">
-                Espace
-              </p>
-              <p className="font-display text-lg leading-tight text-[#202819]">
-                Administration
-              </p>
-            </div>
-          </Link>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            aria-label="Fermer"
-            className="inline-flex size-9 items-center justify-center rounded-md text-[#3c4130] hover:bg-[#efe4cc] lg:hidden"
-          >
-            <X className="size-5" />
-          </button>
-        </div>
-
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
-          <ul className="flex flex-col gap-1">
-            {navItems.map((item) => {
-              const active = isActive(item);
-              const Icon = item.icon;
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    onClick={() => setOpen(false)}
-                    className={cn(
-                      "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
-                      active
-                        ? "bg-[#546b43] text-[#fbefdf] shadow-[0_8px_18px_rgba(84,107,67,0.25)]"
-                        : "text-[#3c4130] hover:bg-[#efe4cc] hover:text-[#202819]",
-                    )}
-                  >
-                    <Icon
-                      className={cn(
-                        "size-4 shrink-0 transition",
-                        active ? "text-[#fbefdf]" : "text-[#5e6353] group-hover:text-[#202819]",
-                      )}
-                    />
-                    <span>{item.label}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-
-        <div className="border-t border-[#d6cfc0] px-4 py-4">
-          {email && (
-            <div className="mb-3 min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.22em] text-[#546b43]">
-                Connecté
-              </p>
-              <p className="mt-0.5 truncate font-serif text-[13px] text-[#202819]">
-                {email}
-              </p>
-            </div>
-          )}
-          <AdminSignOut />
-        </div>
+        {renderNav()}
       </aside>
     </>
   );

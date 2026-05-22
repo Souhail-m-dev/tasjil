@@ -23,7 +23,7 @@ export function AdminSignOut() {
       type="button"
       onClick={onClick}
       disabled={isPending}
-      className="inline-flex h-10 items-center gap-2 self-start rounded-lg border border-[#cdc5b3] bg-[#f2eadf] px-3 text-[13px] font-medium text-[#3c4130] transition hover:border-[#546b43] hover:text-[#202819] disabled:opacity-60 sm:h-11 sm:self-auto sm:px-4 sm:text-sm"
+      className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-[#cdc5b3] bg-[#f2eadf] px-4 text-sm font-medium text-[#3c4130] transition hover:border-[#546b43] hover:text-[#202819] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40 disabled:opacity-60"
     >
       {isPending ? (
         <Loader2 className="size-4 animate-spin" />

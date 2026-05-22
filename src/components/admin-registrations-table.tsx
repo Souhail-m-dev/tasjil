@@ -75,7 +75,7 @@ export function AdminRegistrationsTable({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Rechercher : nom, email, séminaire, note…"
-              className="h-11 w-full rounded-lg border border-[#cdc5b3] bg-[#fbefdf] pl-9 pr-3 text-sm text-[#202819] placeholder:text-[#98927f] focus:border-[#546b43] focus:outline-none focus:ring-2 focus:ring-[#546b43]/25"
+              className="h-11 w-full rounded-lg border border-[#cdc5b3] bg-[#fbefdf] pl-9 pr-3 text-base text-[#202819] placeholder:text-[#98927f] focus:border-[#546b43] focus:outline-none focus:ring-2 focus:ring-[#546b43]/25 sm:text-sm"
             />
           </div>
 
@@ -238,7 +238,7 @@ function FilterChip({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex h-9 items-center rounded-full border px-3 text-[12px] font-medium uppercase tracking-[0.10em] transition",
+        "inline-flex h-9 items-center rounded-full border px-3 text-[12px] font-medium uppercase tracking-[0.10em] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40",
         active
           ? "border-[#546b43] bg-[#546b43] text-[#fbefdf]"
           : "border-[#cdc5b3] bg-[#fbefdf] text-[#3c4130] hover:border-[#546b43]",

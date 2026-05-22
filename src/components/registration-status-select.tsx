@@ -58,7 +58,7 @@ export function RegistrationStatusSelect({
       value={status}
       disabled={isPending}
       onChange={(e) => onChange(e.target.value as Status)}
-      className="rounded-full border border-transparent px-3 py-1 text-xs font-medium uppercase tracking-[0.12em] transition focus:outline-none focus:ring-2 focus:ring-[#546b43]/30"
+      className="h-8 rounded-full border border-transparent px-3 text-[11px] font-medium uppercase tracking-[0.12em] transition focus:outline-none focus:ring-2 focus:ring-[#546b43]/30 disabled:opacity-60"
       style={{ background: bg, color: fg }}
     >
       {STATUS_OPTIONS.map((o) => (

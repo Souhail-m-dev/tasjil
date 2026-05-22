@@ -78,7 +78,7 @@ export function AdminAddParticipant({ seminars }: { seminars: Seminar[] }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#202819] px-3 text-[13px] font-medium text-[#fbefdf] shadow-[0_8px_18px_rgba(32,40,25,0.18)] transition hover:bg-[#3c4130] sm:h-11 sm:px-4 sm:text-sm"
+        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#202819] px-4 text-sm font-medium text-[#fbefdf] shadow-[0_8px_18px_rgba(32,40,25,0.18)] transition hover:bg-[#3c4130] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40 sm:w-auto"
       >
         <UserPlus className="size-4" />
         Ajouter
@@ -90,19 +90,19 @@ export function AdminAddParticipant({ seminars }: { seminars: Seminar[] }) {
               role="dialog"
               aria-modal="true"
               aria-label="Ajouter un participant"
-              className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#0e0a06]/55 p-3 backdrop-blur-sm sm:p-6"
+              className="fixed inset-0 z-[9999] flex items-end justify-center bg-[#0e0a06]/55 backdrop-blur-sm sm:items-center sm:p-6"
               onClick={() => setOpen(false)}
             >
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="flex max-h-full w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-[#fbefdf] shadow-[0_30px_60px_rgba(0,0,0,0.35)]"
+                className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl bg-[#fbefdf] shadow-[0_-20px_50px_rgba(0,0,0,0.35)] sm:max-h-full sm:rounded-2xl sm:shadow-[0_30px_60px_rgba(0,0,0,0.35)]"
               >
-                <header className="flex items-start justify-between gap-3 border-b border-[#d6cfc0] bg-[#f2eadf] px-5 py-4">
+                <header className="flex items-start justify-between gap-3 border-b border-[#d6cfc0] bg-[#f2eadf] px-4 py-3.5 sm:px-5 sm:py-4">
                   <div>
                     <p className="text-[10px] uppercase tracking-[0.28em] text-[#546b43]">
                       Nouveau participant
                     </p>
-                    <h2 className="mt-0.5 font-display text-xl text-[#202819]">
+                    <h2 className="mt-0.5 font-display text-lg text-[#202819] sm:text-xl">
                       Ajouter manuellement
                     </h2>
                   </div>
@@ -110,33 +110,33 @@ export function AdminAddParticipant({ seminars }: { seminars: Seminar[] }) {
                     type="button"
                     onClick={() => setOpen(false)}
                     aria-label="Fermer"
-                    className="inline-flex size-9 items-center justify-center rounded-lg border border-[#cdc5b3] bg-[#fbefdf] text-[#3c4130] transition hover:border-[#546b43]"
+                    className="inline-flex size-11 items-center justify-center rounded-lg border border-[#cdc5b3] bg-[#fbefdf] text-[#3c4130] transition hover:border-[#546b43] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40"
                   >
-                    <X className="size-4" />
+                    <X className="size-5" />
                   </button>
                 </header>
 
                 <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
-                  <div className="flex-1 overflow-y-auto px-5 py-5">
+                  <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
                     <AdminRegistrationFields
                       control={form.control}
                       errors={form.formState.errors}
                       seminars={seminars}
                     />
                   </div>
-                  <footer className="flex items-center justify-end gap-2.5 border-t border-[#d6cfc0] bg-[#f2eadf] px-5 py-4">
+                  <footer className="flex flex-col-reverse gap-2.5 border-t border-[#d6cfc0] bg-[#f2eadf] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-end sm:px-5 sm:py-4">
                     <button
                       type="button"
                       onClick={() => setOpen(false)}
                       disabled={isSaving}
-                      className="inline-flex h-11 items-center justify-center rounded-xl border border-[#cdc5b3] bg-[#fbefdf] px-4 text-sm font-medium text-[#3c4130] transition hover:border-[#546b43] disabled:opacity-50"
+                      className="inline-flex h-11 w-full items-center justify-center rounded-xl border border-[#cdc5b3] bg-[#fbefdf] px-4 text-sm font-medium text-[#3c4130] transition hover:border-[#546b43] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40 disabled:opacity-50 sm:w-auto"
                     >
                       Annuler
                     </button>
                     <button
                       type="submit"
                       disabled={isSaving}
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#202819] px-5 text-sm font-medium text-[#fbefdf] shadow-[0_10px_22px_rgba(32,40,25,0.18)] transition hover:bg-[#3c4130] disabled:opacity-60"
+                      className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#202819] px-5 text-sm font-medium text-[#fbefdf] shadow-[0_10px_22px_rgba(32,40,25,0.18)] transition hover:bg-[#3c4130] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40 disabled:opacity-60 sm:w-auto"
                     >
                       {isSaving ? (
                         <Loader2 className="size-4 animate-spin" />
