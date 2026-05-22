@@ -87,34 +87,31 @@ export default async function Home() {
     >
       <div className="mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-3 py-4 sm:px-6 sm:py-6 lg:px-10">
         {/* Hero / Teacher card */}
-        <section className="rounded-2xl border border-[#d6cfc0] bg-[#fbefdf] px-4 py-5 text-center shadow-[0_12px_28px_rgba(32,40,25,0.07)] sm:px-7 sm:py-7">
-          <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-5">
+        <section className="rounded-2xl border border-[#d6cfc0] bg-[#fbefdf] px-3 py-3 text-center shadow-[0_12px_28px_rgba(32,40,25,0.07)] sm:px-7 sm:py-7">
+          <div className="mx-auto flex max-w-3xl flex-row items-center justify-center gap-3 sm:gap-5">
             <Image
               src={teacher.logoSrc}
               alt={`Logo ${teacher.name}`}
               width={112}
               height={112}
-              className="h-auto w-16 object-contain sm:w-24"
+              className="h-auto w-10 shrink-0 object-contain sm:w-24"
               priority
             />
-            <div className="text-center sm:text-left">
-              <p className="text-[10px] uppercase tracking-[0.28em] text-[#546b43] sm:text-[11px]">
+            <div className="min-w-0 text-left">
+              <p className="text-[9px] uppercase tracking-[0.22em] text-[#546b43] sm:text-[11px] sm:tracking-[0.28em]">
                 {teacher.role}
               </p>
-              <p className="mt-1 font-serif text-base text-[#202819] sm:text-2xl">
+              <p className="font-serif text-[13px] leading-tight text-[#202819] sm:mt-1 sm:text-2xl">
                 {teacher.name}
               </p>
             </div>
           </div>
-          <p className="mx-auto mt-3 max-w-2xl text-[13px] leading-6 text-[#5e6353] sm:text-base">
+          <p className="mx-auto mt-2 max-w-2xl text-[11px] leading-snug text-[#5e6353] sm:mt-3 sm:text-base sm:leading-6">
             Diplômé d’un doctorat en théologie islamique à l’université islamique de Médine
           </p>
-          <h1 className="mt-4 font-display text-[1.75rem] leading-tight text-[#202819] sm:text-[2.5rem]">
+          <h1 className="mt-2 font-display text-[1.25rem] leading-tight text-[#202819] sm:mt-4 sm:text-[2.5rem]">
             Séminaire été 2026
           </h1>
-          <p className="mt-1 font-serif italic text-[13px] text-[#546b43] sm:text-base">
-            
-          </p>
         </section>
 
         {/* Main panel */}
@@ -131,15 +128,10 @@ export default async function Home() {
               </div>
             </div>
 
-            {/* Mobile CTA — sticky-feel, above shared list */}
-            <div className="order-2 lg:hidden">
-              <InscriptionButton size="lg" className="!w-full" />
-            </div>
-
             {/* Shared info */}
-            <aside className="order-3 rounded-xl border border-[#d6cfc0] bg-[#f2eadf] p-4 text-[#202819] sm:p-6 lg:order-1">
+            <aside className="order-2 rounded-xl border border-[#d6cfc0] bg-[#f2eadf] p-4 text-[#202819] sm:p-6 lg:order-1">
               <p className="text-[10px] uppercase tracking-[0.28em] text-[#546b43] sm:text-[11px]">
-                Informations communes
+                Inclus dans le séminaire
               </p>
 
               <div className="mt-3 grid grid-cols-1 gap-2 sm:mt-5 sm:gap-3">
@@ -171,6 +163,11 @@ export default async function Home() {
                 </div>
               </div>
             </aside>
+
+            {/* Mobile CTA — after infos, before page footer */}
+            <div className="order-3 lg:hidden">
+              <InscriptionButton size="lg" className="!w-full" />
+            </div>
           </div>
         </section>
 

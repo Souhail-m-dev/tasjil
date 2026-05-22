@@ -1,3 +1,4 @@
+import { Calendar } from "lucide-react";
 import type { Database } from "@/lib/types/db";
 import { formatDate } from "@/lib/format";
 import { getSeminarDisplay } from "@/lib/seminar-display";
@@ -31,7 +32,6 @@ export function SeminarPanel({
           ? "linear-gradient(180deg, #32241B 0%, #23170E 100%)"
           : "linear-gradient(180deg, #3C4130 0%, #202819 100%)",
         borderColor: "rgba(227,204,158,0.22)",
-        minHeight: 220,
       }}
     >
       <div
@@ -43,22 +43,28 @@ export function SeminarPanel({
         }}
       />
 
-      <div className="relative flex min-w-0 flex-1 flex-col justify-between gap-3 px-4 py-4 sm:gap-4 sm:px-6 sm:py-6">
+      <div className="relative flex min-w-0 flex-1 flex-col justify-between gap-3 px-4 py-4 sm:min-h-[220px] sm:gap-4 sm:px-6 sm:py-6">
         <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-[0.28em] text-[#e3cc9e]/80 sm:text-[11px] sm:tracking-[0.32em]">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-[#e3cc9e]/85 sm:text-[11px] sm:tracking-[0.32em]">
             {display.overline || "Séminaire"}
           </p>
-          <h2 className="mt-1.5 font-display text-[1.35rem] leading-[1.05] sm:mt-2 sm:max-w-[14ch] sm:text-[2rem] sm:leading-[0.98]">
+          <h2 className="mt-2 font-display text-[1.4rem] leading-[1.08] sm:mt-2 sm:max-w-[14ch] sm:text-[2rem] sm:leading-[0.98]">
             {display.display_title}
           </h2>
+          {seminar.author && (
+            <p className="mt-1 font-serif text-[12px] italic text-[#fbefdf]/70 sm:hidden">
+              {seminar.author}
+            </p>
+          )}
         </div>
 
-        <div className="space-y-1 sm:space-y-1.5">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-[#fbefdf]/74 sm:text-sm sm:tracking-[0.16em]">
+        <div className="flex items-center gap-2 border-t border-[#e3cc9e]/15 pt-2.5 sm:block sm:border-0 sm:space-y-1.5 sm:pt-0">
+          <Calendar className="size-3.5 shrink-0 text-[#e3cc9e]/70 sm:hidden" strokeWidth={2} />
+          <p className="text-[11px] uppercase tracking-[0.1em] text-[#fbefdf]/80 sm:text-sm sm:tracking-[0.16em]">
             {datesLabel}
           </p>
           {seminar.author && (
-            <p className="font-serif text-[12px] italic text-[#fbefdf]/70 sm:text-sm">
+            <p className="hidden font-serif italic text-[#fbefdf]/70 sm:block sm:text-sm">
               {seminar.author}
             </p>
           )}
@@ -66,10 +72,12 @@ export function SeminarPanel({
       </div>
 
       {display.flyerSrc && (
-        <FlyerPanelThumb
-          src={display.flyerSrc}
-          alt={display.display_title}
-        />
+        <div className="hidden sm:flex">
+          <FlyerPanelThumb
+            src={display.flyerSrc}
+            alt={display.display_title}
+          />
+        </div>
       )}
     </article>
   );
