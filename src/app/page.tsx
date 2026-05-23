@@ -232,7 +232,7 @@ export default async function Landing() {
                   Formé à l&apos;Université Islamique de Médine à partir de 2001 —
                   institut de langue arabe, licence en Hadîth, magistère puis
                   doctorat en ʿAqîda obtenu en 2019. Il transmet la science
-                  traditionnelle en français depuis cette même période.
+                  islamique en français depuis cette même période.
                 </p>
                 <p className="mt-3 font-serif text-[15px] leading-[1.7] text-[var(--ink-soft,#434843)] sm:text-[16px]">
                   Installé entre Lyon et Firminy, il y officie comme khatîb le
@@ -241,6 +241,15 @@ export default async function Landing() {
                   séminaires en ligne et en présentiel, en France et dans les
                   pays francophones limitrophes.
                 </p>
+                <a
+                  href="https://t.me/drabderahman/99"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--emerald)] underline-offset-[6px] hover:text-[var(--emerald-deep)] hover:underline sm:text-[13px]"
+                >
+                  Lire la biographie complète
+                  <ArrowRight className="size-3.5" />
+                </a>
                 <ul className="mt-6 space-y-2.5 text-[13px] text-[var(--emerald-deep)] sm:text-[14px]">
                   {[
                     "Doctorat 2019 — Université Islamique de Médine",
