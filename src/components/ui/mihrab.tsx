@@ -44,14 +44,16 @@ export function Mihrab({
       />
       <div className="relative flex flex-col items-center px-6 pb-7 pt-12 text-center sm:px-8 sm:pb-8 sm:pt-14">
         {seal && (
-          <Image
-            src="/logo.png"
-            alt=""
-            aria-hidden
-            width={56}
-            height={56}
-            className="mb-4 size-12 opacity-90 sm:size-14"
-          />
+          <div className="mb-5 flex size-16 items-center justify-center rounded-full bg-[var(--paper-cream)] p-2 ring-1 ring-[var(--gold)]/40 shadow-[0_4px_14px_rgba(0,0,0,0.18)] sm:size-20">
+            <Image
+              src="/logo.png"
+              alt=""
+              aria-hidden
+              width={64}
+              height={64}
+              className="size-full object-contain"
+            />
+          </div>
         )}
         {eyebrow && (
           <div className="text-[10px] uppercase tracking-[0.28em] text-[var(--gold-soft)] sm:text-[11px]">
