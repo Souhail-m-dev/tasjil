@@ -88,6 +88,7 @@ export async function sendConfirmationEmail({
       const emailHtml = await render(
         ReceivedEmail({
           firstName: firstReg.first_name,
+          lastName: firstReg.last_name,
           seminarTitles: seminarTitles.length > 0 ? seminarTitles : ["Séminaire"],
           paymentMethod: firstReg.payment_method || "Non spécifié",
         })
