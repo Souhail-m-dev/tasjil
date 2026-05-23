@@ -56,14 +56,14 @@ export default async function Landing() {
     <main className="min-h-screen bg-[var(--paper)] pb-24 text-[var(--ink-900)] sm:pb-0">
       {/* TOPBAR */}
       <header className="sticky top-0 z-30 border-b border-[var(--line-soft)] bg-[var(--paper)]/85 backdrop-blur">
-        <div className="mx-auto flex h-14 w-full max-w-[1180px] items-center justify-between gap-3 px-4 sm:h-16 sm:px-8">
+        <div className="mx-auto flex h-16 w-full max-w-[1180px] items-center justify-between gap-3 px-4 sm:h-20 sm:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <Image
               src={teacher.logoSrc}
               alt={teacher.name}
-              width={36}
-              height={36}
-              className="size-9 shrink-0 object-contain"
+              width={56}
+              height={56}
+              className="size-12 shrink-0 object-contain sm:size-14"
               priority
             />
             <div className="min-w-0 leading-tight">
@@ -157,7 +157,6 @@ export default async function Landing() {
             <Ornament className="my-6" />
             <p className="mx-auto max-w-[42ch] font-serif text-[14px] leading-[1.65] text-[var(--ink-soft,#434843)] sm:text-[16px]">
               Cours en direct sur Zoom, enregistrements, notes et quizz hebdomadaires.
-              Tout est conçu pour un suivi sérieux et autonome.
             </p>
           </div>
 
@@ -230,16 +229,24 @@ export default async function Landing() {
                   Docteur en ʿAqîda
                 </div>
                 <p className="mt-5 font-serif text-[15px] leading-[1.7] text-[var(--ink-soft,#434843)] sm:text-[16px]">
-                  Diplômé d&apos;un doctorat en ʿAqîda à l&apos;Université Islamique de Médine.
-                  Il transmet depuis plus d&apos;une décennie les sciences fondamentales —
-                  Fiqh, Hadîth, Tafsîr, ʿAqîda — avec une pédagogie ancrée dans la
-                  méthodologie des savants.
+                  Formé à l&apos;Université Islamique de Médine à partir de 2001 —
+                  institut de langue arabe, licence en Hadîth, magistère puis
+                  doctorat en ʿAqîda obtenu en 2019. Il transmet la science
+                  traditionnelle en français depuis cette même période.
+                </p>
+                <p className="mt-3 font-serif text-[15px] leading-[1.7] text-[var(--ink-soft,#434843)] sm:text-[16px]">
+                  Installé entre Lyon et Firminy, il y officie comme khatîb le
+                  vendredi et anime plusieurs cours hebdomadaires en mosquées
+                  et centres religieux. Il intervient également dans des
+                  séminaires en ligne et en présentiel, en France et dans les
+                  pays francophones limitrophes.
                 </p>
                 <ul className="mt-6 space-y-2.5 text-[13px] text-[var(--emerald-deep)] sm:text-[14px]">
                   {[
-                    "Doctorat — Université Islamique de Médine",
-                    "Spécialisation : ʿAqîda & sciences du Hadîth",
-                    "Enseigne en français depuis 2014",
+                    "Doctorat 2019 — Université Islamique de Médine",
+                    "18 années d'études à Médine",
+                    "Khatîb à Lyon et Firminy",
+                    "Séminaires en France & pays francophones",
                   ].map((line) => (
                     <li key={line} className="flex items-start gap-3">
                       <span className="mt-2 size-1.5 shrink-0 rotate-45 bg-[var(--gold)]" />
@@ -298,7 +305,7 @@ export default async function Landing() {
             </h2>
             <Ornament className="my-6" />
             <p className="mx-auto max-w-[44ch] font-serif text-[14px] leading-[1.65] text-[var(--ink-soft,#434843)] sm:text-[16px]">
-              Retours des sessions précédentes — quizz, replays, suivi et adab.
+              Retours des sessions précédentes.
             </p>
           </div>
 
@@ -374,12 +381,7 @@ export default async function Landing() {
 
             <Ornament className="my-6" inverse />
 
-            <p className="mx-auto max-w-[42ch] font-serif text-[15px] leading-[1.65] text-[var(--paper-cream)]/85 sm:text-[17px]">
-              Les places sont limitées pour garantir un suivi de qualité.
-              L&apos;inscription précise les modalités selon le séminaire choisi.
-            </p>
-
-            <div className="mt-10 flex justify-center">
+            <div className="mt-4 flex justify-center">
               <Link
                 href="/inscription"
                 className="group inline-flex h-14 items-center gap-3 rounded-full bg-[var(--gold-soft)] px-8 text-[13px] font-bold uppercase tracking-[0.18em] text-[var(--emerald-deep)] shadow-[0_14px_32px_rgba(0,0,0,0.35)] transition hover:-translate-y-0.5 hover:bg-[var(--gold)] sm:h-16 sm:px-10 sm:text-[14px]"
@@ -399,7 +401,7 @@ export default async function Landing() {
       {/* FOOTER */}
       <footer className="bg-[var(--paper-deep)]">
         <div className="mx-auto flex w-full max-w-[1180px] flex-col items-center gap-2 px-4 py-10 text-center text-[11px] text-[var(--ink-fade)] sm:px-8 sm:py-12">
-          <Image src={teacher.logoSrc} alt="" width={36} height={36} className="size-9 opacity-60" />
+          <Image src={teacher.logoSrc} alt="" width={64} height={64} className="size-14 opacity-80 sm:size-16" />
           <div
             className="font-serif text-[14px] text-[var(--emerald-deep)]"
             style={{ fontFamily: "var(--font-arabic), serif", direction: "rtl" }}
