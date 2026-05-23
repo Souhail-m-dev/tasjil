@@ -178,9 +178,9 @@ export default async function MerciPage({
           </div>
         </section>
 
-        {/* SUMMARY + PAYMENT */}
-        <section className="mt-6 grid gap-4 sm:mt-8 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="rounded-2xl border border-[var(--line-soft)] bg-[var(--paper-cream)] p-5 sm:p-6">
+        {/* SUMMARY */}
+        <section className="mt-6 sm:mt-8">
+          <div className="mx-auto max-w-2xl rounded-2xl border border-[var(--line-soft)] bg-[var(--paper-cream)] p-5 sm:p-6">
             <div className="text-[10px] uppercase tracking-[0.28em] text-[var(--emerald)] sm:text-[11px]">
               Récapitulatif
             </div>
@@ -211,52 +211,6 @@ export default async function MerciPage({
                 label="Mode de paiement"
                 value={chosenPayment ? paymentMethodLabels[chosenPayment] : "À confirmer"}
               />
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-[var(--line-soft)] bg-[var(--emerald)] p-5 text-[var(--paper-cream)] sm:p-6">
-            <div className="text-[10px] uppercase tracking-[0.28em] text-[var(--gold-soft)] sm:text-[11px]">
-              {chosenPayment ? `Coordonnées · ${paymentMethodLabels[chosenPayment]}` : "Coordonnées de paiement"}
-            </div>
-            <div className="mt-5 space-y-4">
-              {(Object.entries(paymentDetails) as [PaymentMethod, typeof paymentDetails[PaymentMethod]][]).map(
-                ([method, detail]) => {
-                  const isActive = chosenPayment === method;
-                  const Icon = detail.icon;
-                  return (
-                    <div
-                      key={method}
-                      className="rounded-xl border p-4"
-                      style={{
-                        borderColor: isActive ? "var(--gold)" : "rgba(197,160,89,0.18)",
-                        background: isActive ? "rgba(197,160,89,0.10)" : "rgba(13,31,20,0.35)",
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--gold)]/15 text-[var(--gold-soft)]">
-                          <Icon className="size-4.5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-serif text-[14px] text-[var(--paper-cream)]">
-                            {paymentMethodLabels[method]}
-                          </div>
-                          <div className="truncate text-[10px] uppercase tracking-[0.16em] text-[var(--gold-soft)]/80">
-                            {detail.title}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-3 break-all font-serif text-[14px] text-[var(--paper-cream)]">
-                        {detail.value}
-                      </div>
-                      {detail.note && (
-                        <div className="mt-2 text-[11.5px] leading-[1.5] text-[var(--paper-cream)]/70">
-                          {detail.note}
-                        </div>
-                      )}
-                    </div>
-                  );
-                },
-              )}
             </div>
           </div>
         </section>
