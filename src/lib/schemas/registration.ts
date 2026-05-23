@@ -42,7 +42,6 @@ export const registrationSchema = z
     payment_method: z.enum(paymentMethods, {
       message: "Veuillez choisir un mode de paiement.",
     }),
-    agreed_rules: z.literal(true, { message: "Vous devez cocher cet engagement." }),
     agreed_attendance: z.literal(true, { message: "Vous devez cocher cet engagement." }),
     agreed_payment: z.literal(true, { message: "Vous devez cocher cet engagement." }),
     agreed_truth: z.literal(true, { message: "Vous devez cocher cet engagement." }),
@@ -75,7 +74,6 @@ export function normalizeRegistration(input: RegistrationInput) {
     zoom_email: input.zoom_email ? input.zoom_email.toLowerCase() : null,
     gender: input.gender,
     payment_method: input.payment_method,
-    agreed_rules: input.agreed_rules,
     agreed_attendance: input.agreed_attendance,
     agreed_payment: input.agreed_payment,
     agreed_truth: input.agreed_truth,

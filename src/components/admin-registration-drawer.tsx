@@ -244,7 +244,6 @@ export function AdminRegistrationDrawer({
 
 function EngagementBlock({ registration }: { registration: Registration }) {
   const items: { label: string; checked: boolean }[] = [
-    { label: "Règlement du séminaire", checked: !!registration.agreed_rules },
     { label: "Assiduité et bonne intention", checked: !!registration.agreed_attendance },
     { label: "Règlement des frais", checked: !!registration.agreed_payment },
     { label: "Exactitude des informations", checked: !!registration.agreed_truth },

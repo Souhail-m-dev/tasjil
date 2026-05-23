@@ -86,7 +86,6 @@ export function RegistrationForm({
       zoom_email: "",
       gender: undefined as unknown as RegistrationInput["gender"],
       payment_method: undefined as unknown as RegistrationInput["payment_method"],
-      agreed_rules: false as unknown as true,
       agreed_attendance: false as unknown as true,
       agreed_payment: false as unknown as true,
       agreed_truth: false as unknown as true,
@@ -110,7 +109,7 @@ export function RegistrationForm({
       // info only
     } else if (step.kind === "oath") {
       const ok = await trigger(
-        ["agreed_rules", "agreed_attendance", "agreed_payment", "agreed_truth"],
+        ["agreed_attendance", "agreed_payment", "agreed_truth"],
         { shouldFocus: true },
       );
       if (!ok) return;
@@ -747,7 +746,6 @@ function OathStep({
   control: ReturnType<typeof useForm<RegistrationInput>>["control"];
 }) {
   const items: { name: keyof RegistrationInput; label: string }[] = [
-    { name: "agreed_rules", label: "J'ai pris connaissance du règlement du séminaire et je m'y conforme." },
     { name: "agreed_attendance", label: "Je m'engage à suivre les cours avec sérieux, assiduité et bonne intention." },
     { name: "agreed_payment", label: "Je m'engage à régler les frais selon le mode de paiement choisi." },
     { name: "agreed_truth", label: "J'atteste de l'exactitude des informations fournies." },
