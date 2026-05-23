@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -20,10 +21,9 @@ import {
   Loader2,
   X,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { formatDate, formatPrice } from "@/lib/format";
-import { sendConfirmationEmail } from "@/app/actions/send-confirmation-email";
+import { submitRegistration } from "@/app/actions/submit-registration";
 import { Ornament } from "@/components/ui/ornament";
 import { getSeminarDisplay, teacher } from "@/lib/seminar-display";
 import {
@@ -34,7 +34,6 @@ import {
   paymentMethodLabels,
   paymentMethods,
   genders,
-  normalizeRegistration,
   type RegistrationInput,
   type PaymentMethod,
   type WalkthroughStep,
@@ -93,9 +92,15 @@ export function RegistrationForm({
     },
   });
 
-  const { control, handleSubmit, watch, trigger, setValue, formState } = form;
+  const { control, handleSubmit, watch, trigger, setValue } = form;
   const values = watch();
   const step = walkthroughSteps[stepIndex];
+
+  useEffect(() => {
+    if (step.kind === "review") {
+      void trigger();
+    }
+  }, [step.kind, trigger]);
 
   const selectedSeminar = useMemo(
     () => seminars.find((s) => s.id === values.seminar_id),
@@ -162,38 +167,13 @@ export function RegistrationForm({
     if (submittingRef.current) return;
     submittingRef.current = true;
     startTransition(async () => {
-      const supabase = createClient();
-      const payload = normalizeRegistration(data);
-      const inserts = isBothSeminarsSelection(data.seminar_id)
-        ? seminars.map((seminar) => ({
-            ...payload,
-            seminar_id: seminar.id,
-            payment_status: "pending",
-            notes: "Inscription pack 2 séminaires - tarif 250€.",
-          }))
-        : [{ ...payload, payment_status: "pending" }];
-      const { data: insertedData, error } = await supabase
-        .from("registrations")
-        .insert(inserts)
-        .select("id");
-      if (error) {
+      const result = await submitRegistration(data);
+      if (!result.ok) {
         submittingRef.current = false;
-        toast.error("Inscription échouée. Réessayez ou contactez-nous.");
-        console.error(error);
+        toast.error(result.error);
         return;
       }
-      if (insertedData) {
-        void sendConfirmationEmail({
-          registrationIds: insertedData.map((r) => r.id),
-        });
-      }
-      const params = new URLSearchParams({
-        seminar: isBothSeminarsSelection(data.seminar_id)
-          ? BOTH_SEMINARS_OPTION_ID
-          : selectedSeminar?.slug ?? "",
-        payment: data.payment_method,
-        name: data.first_name,
-      });
+      const params = new URLSearchParams(result.redirect);
       router.push(`/inscription/merci?${params.toString()}`);
     });
   };
@@ -243,7 +223,7 @@ export function RegistrationForm({
       </header>
 
       {/* STAGE */}
-      <div className="relative overflow-y-auto px-5 pb-20 pt-8 sm:px-8 sm:pt-14">
+      <div className="relative overflow-y-auto px-4 pb-16 pt-6 sm:px-8 sm:pt-14">
         <div
           key={stepIndex}
           className={cn(
@@ -286,7 +266,7 @@ export function RegistrationForm({
             {step.kind === "review" ? (
               <button
                 type="submit"
-                disabled={isPending || !formState.isValid}
+                disabled={isPending}
                 className="inline-flex items-center gap-2.5 rounded-lg bg-[var(--emerald)] px-5 py-3.5 text-[13px] font-bold uppercase tracking-[0.08em] text-[var(--gold-soft)] shadow-[0_12px_24px_rgba(13,31,20,0.18)] transition hover:bg-[var(--emerald-deep)] hover:text-[var(--gold)] disabled:opacity-60"
               >
                 {isPending ? (
@@ -414,7 +394,7 @@ function QHead({
       )}
       <h1
         className="m-0 mb-3.5 font-serif font-semibold leading-[1.15] tracking-[-0.015em] text-[var(--emerald-deep)]"
-        style={{ fontSize: "clamp(28px, 5vw, 44px)" }}
+        style={{ fontSize: "clamp(22px, 5vw, 44px)", textWrap: "balance" }}
       >
         {title}
       </h1>
@@ -541,7 +521,7 @@ function TextStep({
               <div className="flex items-end gap-1 border-b-2 border-[var(--ink-fade)] transition-colors focus-within:border-[var(--emerald)]">
                 <span
                   className="pb-3.5 pt-3.5 font-serif text-[var(--ink-fade)]"
-                  style={{ fontSize: "clamp(22px, 3vw, 32px)" }}
+                  style={{ fontSize: "clamp(17px, 5vw, 28px)" }}
                 >
                   @
                 </span>
@@ -556,7 +536,7 @@ function TextStep({
                   autoFocus
                   placeholder={step.placeholder?.replace(/^@/, "") ?? ""}
                   className={cn(walkInputClass, "border-b-0")}
-                  style={{ fontSize: "clamp(22px, 3vw, 32px)" }}
+                  style={{ fontSize: "clamp(17px, 5vw, 28px)" }}
                 />
               </div>
             ) : (
@@ -568,7 +548,7 @@ function TextStep({
                 autoFocus
                 placeholder={step.placeholder}
                 className={walkInputClass}
-                style={{ fontSize: "clamp(22px, 3vw, 32px)" }}
+                style={{ fontSize: "clamp(17px, 5vw, 28px)" }}
               />
             )}
           </div>
@@ -609,7 +589,7 @@ function EmailStep({
               autoFocus
               placeholder={step.placeholder}
               className={walkInputClass}
-              style={{ fontSize: "clamp(22px, 3vw, 32px)" }}
+              style={{ fontSize: "clamp(17px, 5vw, 28px)" }}
             />
           </div>
           <FieldError message={fieldState.error?.message} />
@@ -836,7 +816,7 @@ function SignatureStep({
                 walkInputClass,
                 "border-b-[var(--gold)] py-2 italic",
               )}
-              style={{ fontSize: "clamp(28px, 4vw, 40px)" }}
+              style={{ fontSize: "clamp(20px, 5vw, 36px)" }}
             />
             <div className="relative mt-2.5 text-[12px] uppercase tracking-[0.1em] text-[var(--ink-fade)]">
               Fait le{" "}
