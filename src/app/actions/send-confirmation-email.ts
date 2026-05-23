@@ -1,7 +1,7 @@
 "use server";
 
 import { render } from "@react-email/render";
-import { transporter, verifyConnection } from "@/lib/email/transport";
+import { resend } from "@/lib/email/resend";
 import { ReceivedEmail } from "@/lib/email/templates/ReceivedEmail";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -16,24 +16,29 @@ export async function sendConfirmationEmail({
 }: SendConfirmationEmailParams) {
   try {
     console.log("--- Email Action Debug ---");
-    console.log("[Env] GMAIL_USER:", process.env.GMAIL_USER ? "Defined" : "MISSING");
-    console.log("[Env] GMAIL_APP_PASSWORD:", process.env.GMAIL_APP_PASSWORD ? "Defined" : "MISSING");
+    console.log("[Env] RESEND_API_KEY:", process.env.RESEND_API_KEY ? "Defined" : "MISSING");
+    console.log("[Env] EMAIL_FROM:", process.env.EMAIL_FROM ? "Defined" : "MISSING");
     console.log("[Env] SUPABASE_SERVICE_ROLE_KEY:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "Defined" : "MISSING");
-    
+
     if (!supabaseAdmin) {
-      console.error("[Email] supabaseAdmin is not initialized. Check your environment variables.");
+      console.error("[Email] supabaseAdmin not initialized");
       return { success: false, error: "Database configuration error" };
     }
-
-    const isSmtpOk = await verifyConnection();
-    if (!isSmtpOk) {
-      console.error("[Email] SMTP verification failed. Check Gmail credentials.");
-      return { success: false, error: "Email server configuration error" };
+    if (!resend) {
+      console.error("[Email] resend client not initialized");
+      return { success: false, error: "Email configuration error" };
     }
 
-    console.log(`[Email] Starting send process for ${registrationIds.length} registrations`);
-    
-    // 1. Fetch registrations with seminar titles
+    const fromEmail = process.env.EMAIL_FROM;
+    const fromName = process.env.EMAIL_FROM_NAME || "Tasjîl";
+    const replyTo = process.env.EMAIL_REPLY_TO;
+    if (!fromEmail) {
+      console.error("[Email] EMAIL_FROM env missing");
+      return { success: false, error: "Email sender not configured" };
+    }
+
+    console.log(`[Email] Sending for ${registrationIds.length} registrations`);
+
     const { data: registrations, error: fetchError } = await supabaseAdmin
       .from("registrations")
       .select(`
@@ -53,7 +58,6 @@ export async function sendConfirmationEmail({
       return { success: false, error: "No registrations found" };
     }
 
-    // Group registrations by email to send ONE combined email if multiple IDs provided for same person
     const groupedByEmail: Record<string, typeof registrations> = {};
     for (const reg of registrations) {
       if (!groupedByEmail[reg.email]) groupedByEmail[reg.email] = [];
@@ -65,8 +69,7 @@ export async function sendConfirmationEmail({
 
     for (const [email, userRegs] of Object.entries(groupedByEmail)) {
       const firstReg = userRegs[0];
-      
-      // 2. Idempotency check: skip if ALL registrations in this group were sent within 10 mins, unless forced
+
       const now = new Date();
       const needsSending = force || userRegs.some(reg => {
         const sentAt = reg.confirmation_email_sent_at ? new Date(reg.confirmation_email_sent_at) : null;
@@ -79,7 +82,6 @@ export async function sendConfirmationEmail({
         continue;
       }
 
-      // 3. Prepare email content
       const seminarTitles = userRegs
         .map(reg => reg.seminars?.title)
         .filter(Boolean) as string[];
@@ -94,33 +96,33 @@ export async function sendConfirmationEmail({
         })
       );
 
-      // 4. Send email
-      const fromEmail = process.env.GMAIL_USER;
-      const fromName = process.env.EMAIL_FROM_NAME || "Inscription Séminaire";
-      
-      console.log(`[Email] Attempting SMTP send to ${email} via ${fromEmail}`);
-      
       try {
-        const info = await transporter.sendMail({
-          from: `"${fromName}" <${fromEmail}>`,
+        const { data, error: sendError } = await resend.emails.send({
+          from: `${fromName} <${fromEmail}>`,
           to: email,
-          subject: seminarTitles.length > 1 
-            ? "Confirmation de vos inscriptions" 
+          subject: seminarTitles.length > 1
+            ? "Confirmation de vos inscriptions"
             : "Confirmation de votre inscription",
           html: emailHtml,
+          replyTo: replyTo || undefined,
           headers: {
             "X-App-Source": "SeminarRegistration",
           },
         });
 
-        console.log(`[Email] SMTP success for ${email}. MessageID: ${info.messageId}`);
+        if (sendError || !data) {
+          console.error(`[Email] Resend error for ${email}:`, sendError);
+          results.push({ email, status: "failed", error: sendError?.message || "unknown" });
+          continue;
+        }
 
-        // 5. Update ALL registration records in this group
+        console.log(`[Email] Resend success for ${email}. ID: ${data.id}`);
+
         const { error: updateError } = await supabaseAdmin
           .from("registrations")
           .update({
             confirmation_email_sent_at: new Date().toISOString(),
-            confirmation_email_message_id: info.messageId,
+            confirmation_email_message_id: data.id,
           })
           .in("id", userRegs.map(r => r.id));
 
@@ -128,17 +130,19 @@ export async function sendConfirmationEmail({
           console.error(`[Email] DB Update failed for ${email}:`, updateError);
           results.push({ email, status: "partial_success", error: "Email sent but DB update failed" });
         } else {
-          results.push({ email, status: "success", messageId: info.messageId });
+          results.push({ email, status: "success", messageId: data.id });
         }
-      } catch (smtpError: any) {
-        console.error(`[Email] SMTP failed for ${email}:`, smtpError);
-        results.push({ email, status: "failed", error: smtpError.message });
+      } catch (sendErr) {
+        const message = sendErr instanceof Error ? sendErr.message : String(sendErr);
+        console.error(`[Email] Send failed for ${email}:`, sendErr);
+        results.push({ email, status: "failed", error: message });
       }
     }
 
     return { success: true, results };
-  } catch (error: any) {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error("Error in sendConfirmationEmail:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: message };
   }
 }
