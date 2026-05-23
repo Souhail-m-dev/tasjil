@@ -324,26 +324,75 @@ export default async function Landing() {
       </section>
 
       {/* FINAL CTA */}
-      <section className="border-b border-[var(--line-soft)]">
-        <div className="mx-auto w-full max-w-[1180px] px-4 py-20 sm:px-8 sm:py-28">
-          <Mihrab eyebrow="Inscriptions" seal>
-            <h2 className="font-display text-[1.7rem] leading-tight text-[var(--paper-cream)] sm:text-[2.1rem]">
+      <section className="relative overflow-hidden border-b border-[var(--line-soft)] bg-[var(--emerald-deep)]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.07]"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><g fill='none' stroke='%23c5a059' stroke-width='1'><path d='M100 20 L160 60 L160 140 L100 180 L40 140 L40 60 Z'/><path d='M100 50 L130 70 L130 130 L100 150 L70 130 L70 70 Z'/><circle cx='100' cy='100' r='8'/></g></svg>\")",
+            backgroundSize: "180px 180px",
+          }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(circle at 50% 0%, rgba(197,160,89,0.18), transparent 55%)",
+          }}
+        />
+
+        <div className="relative mx-auto w-full max-w-[1180px] px-4 py-20 sm:px-8 sm:py-28">
+          <div className="mx-auto max-w-[640px] text-center">
+            <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-[var(--paper-cream)] p-2.5 ring-1 ring-[var(--gold)]/40 shadow-[0_6px_20px_rgba(0,0,0,0.25)] sm:size-24">
+              <Image
+                src={teacher.logoSrc}
+                alt=""
+                width={80}
+                height={80}
+                className="size-full object-contain"
+              />
+            </div>
+
+            <div className="mt-7">
+              <Pill tone="gold" pulse>
+                Inscriptions ouvertes
+              </Pill>
+            </div>
+
+            <div
+              className="mt-6 text-[14px] text-[var(--gold-soft)] sm:text-[16px]"
+              style={{ fontFamily: "var(--font-arabic), serif", direction: "rtl" }}
+            >
+              بِسْمِ اللهِ
+            </div>
+
+            <h2 className="mt-4 font-display text-[2rem] leading-[1.1] text-[var(--paper-cream)] sm:text-[2.8rem] lg:text-[3.2rem]">
               Réservez votre place
             </h2>
-            <p className="mx-auto mt-3 max-w-[36ch] text-[13px] leading-[1.55] text-[var(--paper-cream)]/75 sm:text-[14px]">
+
+            <Ornament className="my-6" inverse />
+
+            <p className="mx-auto max-w-[42ch] font-serif text-[15px] leading-[1.65] text-[var(--paper-cream)]/85 sm:text-[17px]">
               Les places sont limitées pour garantir un suivi de qualité.
               L&apos;inscription précise les modalités selon le séminaire choisi.
             </p>
-            <Link
-              href="/inscription"
-              className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-full bg-[var(--gold-soft)] px-6 text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--emerald-deep)] transition hover:bg-[var(--gold)] sm:text-[13px]"
-            >
-              Commencer mon inscription
-            </Link>
-            <p className="mt-4 text-[10px] uppercase tracking-[0.18em] text-[var(--paper-cream)]/55">
-              Tarifs et horaires précisés en cours d&apos;inscription
+
+            <div className="mt-10 flex justify-center">
+              <Link
+                href="/inscription"
+                className="group inline-flex h-14 items-center gap-3 rounded-full bg-[var(--gold-soft)] px-8 text-[13px] font-bold uppercase tracking-[0.18em] text-[var(--emerald-deep)] shadow-[0_14px_32px_rgba(0,0,0,0.35)] transition hover:-translate-y-0.5 hover:bg-[var(--gold)] sm:h-16 sm:px-10 sm:text-[14px]"
+              >
+                Commencer mon inscription
+                <ArrowRight className="size-4 transition group-hover:translate-x-1 sm:size-5" />
+              </Link>
+            </div>
+
+            <p className="mt-6 text-[10px] uppercase tracking-[0.22em] text-[var(--gold-soft)]/70 sm:text-[11px]">
+              ◆ Tarifs et horaires précisés en cours d&apos;inscription ◆
             </p>
-          </Mihrab>
+          </div>
         </div>
       </section>
 
