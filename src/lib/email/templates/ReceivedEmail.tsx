@@ -102,7 +102,7 @@ export const ReceivedEmail = ({
           </Text>
 
           <Text style={footer}>
-            Wa Allâhu al-muwaffiq.
+            Bārak Allāhu fikum  🤲🌹.
             <br />
             Dr. AbdelRahman Abou Abdelwahab
           </Text>
