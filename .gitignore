@@ -43,3 +43,8 @@ next-env.d.ts
 # local tooling
 .claude/
 bash.exe.stackdump
+
+# design prototypes & local notes
+/tasjil/
+/landing.md
+/temoignage.md
