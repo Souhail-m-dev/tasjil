@@ -20,6 +20,7 @@ import { Mihrab } from "@/components/ui/mihrab";
 import { Ornament } from "@/components/ui/ornament";
 import { Pill } from "@/components/ui/pill";
 import { CornerFlourish } from "@/components/ui/corner-flourish";
+import { HadithHero } from "@/components/hadith-hero";
 import type { Database } from "@/lib/types/db";
 
 type Seminar = Database["public"]["Tables"]["seminars"]["Row"];
@@ -126,20 +127,7 @@ export default async function Landing() {
             </div>
           </div>
           <div className="hidden lg:block">
-            <div className="relative aspect-[3/4] overflow-hidden rounded-3xl bg-gradient-to-br from-[var(--emerald)] to-[var(--emerald-deep)] p-8 text-[var(--gold-soft)]">
-              <CornerFlourish color="var(--gold)" />
-              <div className="text-[10px] uppercase tracking-[0.32em] text-[var(--gold)]">
-                Session d&apos;été · 1447 H
-              </div>
-              <div
-                className="mt-auto flex h-full items-center justify-center text-center text-[5rem] leading-[0.95] text-[var(--gold-soft)]"
-                style={{ fontFamily: "var(--font-arabic), serif", direction: "rtl" }}
-              >
-                أُصُولُ
-                <br />
-                الْعِلْمِ
-              </div>
-            </div>
+            <HadithHero />
           </div>
         </div>
       </section>

@@ -18,8 +18,9 @@ const getTransporter = () => {
 
   const options = {
     host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false,
+    requireTLS: true,
     family: 4,
     connectionTimeout: 10000,
     greetingTimeout: 10000,
@@ -29,6 +30,7 @@ const getTransporter = () => {
       pass: GMAIL_APP_PASSWORD?.replace(/\s+/g, ""),
     },
   } as SMTPTransport.Options;
+
   const transporter = nodemailer.createTransport(options);
 
   if (process.env.NODE_ENV !== "production") {
@@ -51,4 +53,3 @@ export const verifyConnection = async () => {
     return false;
   }
 };
-
