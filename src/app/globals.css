@@ -36,6 +36,17 @@
   --accent: var(--sand-500);
   --accent-foreground: var(--bark-800);
   --ring: var(--ink-600);
+
+  /* Emerald variant — landing + registration */
+  --emerald: #1e3024;
+  --emerald-deep: #0d1f14;
+  --gold: #c5a059;
+  --gold-soft: #e9c176;
+  --paper: #fcf9f3;
+  --paper-cream: #f9f6f0;
+  --paper-deep: #f3efe5;
+  --line-soft: rgba(58, 46, 38, 0.12);
+  --ink-fade: #737873;
 }
 
 @theme inline {
@@ -74,6 +85,14 @@
   --color-error: #a8321b;
   --color-on-error: #ffffff;
 
+  --color-emerald: var(--emerald);
+  --color-emerald-deep: var(--emerald-deep);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-paper: var(--paper);
+  --color-paper-cream: var(--paper-cream);
+  --color-paper-deep: var(--paper-deep);
+
   --font-sans: var(--font-sans);
   --font-display: var(--font-display);
   --font-serif: var(--font-serif);
@@ -102,6 +121,36 @@
   to {
     opacity: 1;
   }
+}
+
+@keyframes walk-fwd {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes walk-back {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-walk-fwd {
+  animation: walk-fwd 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.animate-walk-back {
+  animation: walk-back 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 @utility text-display-xl {
