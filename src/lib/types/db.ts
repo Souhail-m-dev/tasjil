@@ -35,6 +35,10 @@ export type Database = {
       }
       registrations: {
         Row: {
+          agreed_attendance: boolean
+          agreed_payment: boolean
+          agreed_rules: boolean
+          agreed_truth: boolean
           confirmation_email_message_id: string | null
           confirmation_email_sent_at: string | null
           created_at: string | null
@@ -47,10 +51,16 @@ export type Database = {
           payment_method: string | null
           payment_status: string | null
           seminar_id: string | null
+          signature_text: string | null
+          signed_at: string | null
           telegram_handle: string | null
           zoom_email: string | null
         }
         Insert: {
+          agreed_attendance?: boolean
+          agreed_payment?: boolean
+          agreed_rules?: boolean
+          agreed_truth?: boolean
           confirmation_email_message_id?: string | null
           confirmation_email_sent_at?: string | null
           created_at?: string | null
@@ -63,10 +73,16 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string | null
           seminar_id?: string | null
+          signature_text?: string | null
+          signed_at?: string | null
           telegram_handle?: string | null
           zoom_email?: string | null
         }
         Update: {
+          agreed_attendance?: boolean
+          agreed_payment?: boolean
+          agreed_rules?: boolean
+          agreed_truth?: boolean
           confirmation_email_message_id?: string | null
           confirmation_email_sent_at?: string | null
           created_at?: string | null
@@ -79,6 +95,8 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string | null
           seminar_id?: string | null
+          signature_text?: string | null
+          signed_at?: string | null
           telegram_handle?: string | null
           zoom_email?: string | null
         }
