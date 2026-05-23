@@ -180,6 +180,7 @@ export function AdminRegistrationDrawer({
               errors={form.formState.errors}
               seminars={seminars}
             />
+            <EngagementBlock registration={registration} />
           </div>
 
           <footer className="flex flex-col-reverse gap-4 border-t border-[#d6cfc0] bg-[#f2eadf] px-4 py-3.5 sm:flex-row sm:items-end sm:justify-between sm:px-5 sm:py-4">
@@ -239,6 +240,71 @@ export function AdminRegistrationDrawer({
   );
 
   return createPortal(overlay, document.body);
+}
+
+function EngagementBlock({ registration }: { registration: Registration }) {
+  const items: { label: string; checked: boolean }[] = [
+    { label: "Règlement du séminaire", checked: !!registration.agreed_rules },
+    { label: "Assiduité et bonne intention", checked: !!registration.agreed_attendance },
+    { label: "Règlement des frais", checked: !!registration.agreed_payment },
+    { label: "Exactitude des informations", checked: !!registration.agreed_truth },
+  ];
+  const allOk = items.every((i) => i.checked);
+  const signed = !!registration.signature_text;
+
+  if (!signed && !registration.signed_at && !allOk && items.every((i) => !i.checked)) {
+    return null;
+  }
+
+  return (
+    <div className="mt-5 rounded-xl border border-[#d6cfc0] bg-[#f2eadf] p-4 sm:p-5">
+      <p className="text-[10px] uppercase tracking-[0.22em] text-[#546b43] sm:text-[11px]">
+        Engagement & signature
+      </p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        {items.map((it) => (
+          <div
+            key={it.label}
+            className="flex items-center gap-2 text-[13px] text-[#3c4130]"
+          >
+            <span
+              className={
+                "inline-block size-2 rounded-full " +
+                (it.checked ? "bg-[#546b43]" : "bg-[#cdc5b3]")
+              }
+            />
+            {it.label}
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 grid gap-2 border-t border-[#d6cfc0] pt-3 sm:grid-cols-2">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-[#5e6353]">
+            Signature
+          </p>
+          <p className="mt-0.5 font-serif text-[14px] italic text-[#202819]">
+            {registration.signature_text ?? "—"}
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-[#5e6353]">
+            Signé le
+          </p>
+          <p className="mt-0.5 text-[14px] text-[#202819]">
+            {registration.signed_at
+              ? new Date(registration.signed_at).toLocaleString("fr-FR", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "—"}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function emptyDefaults(): AdminRegistrationInput {
