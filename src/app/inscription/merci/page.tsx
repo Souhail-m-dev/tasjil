@@ -145,6 +145,16 @@ export default async function MerciPage({
             <p className="max-w-2xl font-serif text-[14px] leading-[1.7] text-[var(--ink-soft,#434843)] sm:text-[16px]">
               Un email récapitulatif vous a été envoyé avec les instructions de paiement détaillées.
             </p>
+            <p className="mt-4 max-w-2xl font-serif text-[13px] leading-[1.7] text-[var(--ink-soft,#434843)] sm:text-[14px]">
+              Pensez à regarder vos spams. En cas de problème, contactez-nous à{" "}
+              <a
+                href="mailto:dr.abdelrahman.abou.abdelwahab@gmail.com"
+                className="font-semibold text-[var(--emerald)] underline underline-offset-2 hover:text-[var(--emerald-deep)]"
+              >
+                dr.abdelrahman.abou.abdelwahab@gmail.com
+              </a>
+              .
+            </p>
           </div>
 
           {/* WHAT NEXT — 3 steps */}
