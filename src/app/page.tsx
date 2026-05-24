@@ -99,8 +99,10 @@ export default async function Landing() {
               بِسْمِ اللهِ الرَّحْمَٰنِ الرَّحِيمِ
             </div>
             <h1 className="mt-5 font-display text-[2.2rem] leading-[1.05] text-[var(--emerald-deep)] sm:text-[3.2rem] lg:text-[3.8rem]">
+              Faites de votre été
+              <br />
               <em className="font-serif italic text-[var(--emerald)]">
-                Séminaire été 2026,
+                une provision pour l&apos;au-delà.
               </em>
             </h1>
             <Ornament className="my-6 justify-start sm:my-8" />
