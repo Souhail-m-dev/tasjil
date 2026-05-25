@@ -26,12 +26,12 @@ type Registration = Database["public"]["Tables"]["registrations"]["Row"] & {
 type Seminar = Database["public"]["Tables"]["seminars"]["Row"];
 
 export function AdminRegistrationDrawer({
-  registration,
+  registrations,
   seminars,
   open,
   onClose,
 }: {
-  registration: Registration | null;
+  registrations: Registration[] | null;
   seminars: Seminar[];
   open: boolean;
   onClose: () => void;
@@ -41,7 +41,13 @@ export function AdminRegistrationDrawer({
   const [isSaving, startSaving] = useTransition();
   const [isDeleting, startDeleting] = useTransition();
   const [isSendingEmail, startSendingEmail] = useTransition();
+  const [isSendingPayment, startSendingPayment] = useTransition();
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const regs = registrations ?? [];
+  const primary = regs[0] ?? null;
+  const isCombined = regs.length > 1;
+  const ids = regs.map((r) => r.id);
 
   useEffect(() => setMounted(true), []);
 
@@ -52,22 +58,27 @@ export function AdminRegistrationDrawer({
   });
 
   useEffect(() => {
-    if (registration) {
+    const p = registrations?.[0];
+    if (p) {
       form.reset({
-        seminar_id: registration.seminar_id ?? "",
-        first_name: registration.first_name,
-        last_name: registration.last_name,
-        email: registration.email,
-        telegram_handle: registration.telegram_handle ?? "",
-        zoom_email: registration.zoom_email ?? "",
-        gender: (registration.gender ?? "homme") as AdminRegistrationInput["gender"],
-        payment_method: (registration.payment_method ?? "paypal") as AdminRegistrationInput["payment_method"],
-        payment_status: (registration.payment_status ?? "pending") as PaymentStatus,
-        notes: registration.notes ?? "",
+        seminar_id: p.seminar_id ?? "",
+        first_name: p.first_name,
+        last_name: p.last_name,
+        email: p.email,
+        telegram_handle: p.telegram_handle ?? "",
+        zoom_email: p.zoom_email ?? "",
+        gender: (p.gender ?? "homme") as AdminRegistrationInput["gender"],
+        payment_method: (p.payment_method ?? "paypal") as AdminRegistrationInput["payment_method"],
+        payment_status: (p.payment_status ?? "pending") as PaymentStatus,
+        installment_count:
+          p.installment_count != null ? String(p.installment_count) : "",
+        installment_first_date: p.installment_first_date ?? "",
+        installment_dates: (p.installment_dates as string[] | null) ?? [],
+        notes: p.notes ?? "",
       });
       setConfirmDelete(false);
     }
-  }, [registration, form]);
+  }, [registrations, form]);
 
   useEffect(() => {
     if (!open) return;
@@ -83,22 +94,32 @@ export function AdminRegistrationDrawer({
     };
   }, [open, onClose]);
 
-  if (!mounted || !open || !registration) return null;
+  if (!mounted || !open || !primary) return null;
 
   const onSubmit = form.handleSubmit((data) => {
     startSaving(async () => {
       const supabase = createClient();
       const payload = normalizeAdminPayload(data);
-      const { error } = await supabase
-        .from("registrations")
-        .update(payload)
-        .eq("id", registration.id);
+      let error;
+      if (isCombined) {
+        const shared = { ...payload };
+        delete (shared as Partial<typeof payload>).seminar_id;
+        ({ error } = await supabase
+          .from("registrations")
+          .update(shared)
+          .in("id", ids));
+      } else {
+        ({ error } = await supabase
+          .from("registrations")
+          .update(payload)
+          .eq("id", primary.id));
+      }
 
       if (error) {
         toast.error("Échec de la mise à jour.");
         return;
       }
-      toast.success("Inscription mise à jour.");
+      toast.success(isCombined ? "Inscriptions mises à jour." : "Inscription mise à jour.");
       router.refresh();
       onClose();
     });
@@ -114,27 +135,43 @@ export function AdminRegistrationDrawer({
       const { error } = await supabase
         .from("registrations")
         .delete()
-        .eq("id", registration.id);
+        .in("id", ids);
       if (error) {
         toast.error("Échec de la suppression.");
         return;
       }
-      toast.success("Inscription supprimée.");
+      toast.success(isCombined ? "Inscriptions supprimées." : "Inscription supprimée.");
       router.refresh();
       onClose();
     });
   };
 
   const onSendEmail = () => {
-    if (!registration) return;
+    if (!primary) return;
     startSendingEmail(async () => {
       const { success } = await sendConfirmationEmail({
-        registrationIds: [registration.id],
+        registrationIds: ids,
         force: true,
       });
       if (success) {
         toast.success("Email envoyé");
         router.refresh();
+      } else {
+        toast.error("Échec de l'envoi.");
+      }
+    });
+  };
+
+  const onSendPaymentEmail = () => {
+    if (!primary) return;
+    startSendingPayment(async () => {
+      const { success } = await sendConfirmationEmail({
+        registrationIds: ids,
+        force: true,
+        template: "payment",
+      });
+      if (success) {
+        toast.success("Email de confirmation paiement envoyé");
       } else {
         toast.error("Échec de l'envoi.");
       }
@@ -156,12 +193,12 @@ export function AdminRegistrationDrawer({
         <header className="flex items-start justify-between gap-3 border-b border-[#d6cfc0] bg-[#f2eadf] px-4 py-3.5 sm:px-5 sm:py-4">
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-[0.28em] text-[#546b43]">
-              Inscription
+              {isCombined ? `Inscrit · ${regs.length} séminaires` : "Inscription"}
             </p>
             <h2 className="mt-0.5 truncate font-display text-lg text-[#202819] sm:text-xl">
-              {registration.first_name} {registration.last_name}
+              {primary.first_name} {primary.last_name}
             </h2>
-            <p className="truncate text-[12px] text-[#5e6353]">{registration.email}</p>
+            <p className="truncate text-[12px] text-[#5e6353]">{primary.email}</p>
           </div>
           <button
             type="button"
@@ -179,8 +216,16 @@ export function AdminRegistrationDrawer({
               control={form.control}
               errors={form.formState.errors}
               seminars={seminars}
+              combinedSeminars={
+                isCombined
+                  ? regs.map((r) => ({
+                      title: r.seminars?.title ?? "Séminaire",
+                      price: r.seminars?.price_eur ?? null,
+                    }))
+                  : undefined
+              }
             />
-            <EngagementBlock registration={registration} />
+            <EngagementBlock registration={primary} />
           </div>
 
           <footer className="flex flex-col-reverse gap-4 border-t border-[#d6cfc0] bg-[#f2eadf] px-4 py-3.5 sm:flex-row sm:items-end sm:justify-between sm:px-5 sm:py-4">
@@ -188,7 +233,7 @@ export function AdminRegistrationDrawer({
               <button
                 type="button"
                 onClick={onDelete}
-                disabled={isDeleting || isSaving || isSendingEmail}
+                disabled={isDeleting || isSaving || isSendingEmail || isSendingPayment}
                 className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#a8321b]/40 bg-[#fbe6df] px-4 text-sm font-medium text-[#a8321b] transition hover:border-[#a8321b] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#a8321b]/30 disabled:opacity-50 sm:w-auto"
               >
                 {isDeleting ? (
@@ -200,15 +245,15 @@ export function AdminRegistrationDrawer({
               </button>
 
               <div className="flex flex-col gap-1">
-                {registration.confirmation_email_sent_at && (
+                {primary.confirmation_email_sent_at && (
                   <span className="px-1 text-[10px] text-[#5e6353]">
-                    Dernier envoi : {formatDate(registration.confirmation_email_sent_at)}
+                    Dernier envoi : {formatDate(primary.confirmation_email_sent_at)}
                   </span>
                 )}
                 <button
                   type="button"
                   onClick={onSendEmail}
-                  disabled={isSendingEmail || isSaving || isDeleting}
+                  disabled={isSendingEmail || isSendingPayment || isSaving || isDeleting}
                   className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#cdc5b3] bg-[#fbefdf] px-4 text-sm font-medium text-[#3c4130] transition hover:border-[#546b43] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40 disabled:opacity-50 sm:w-auto"
                 >
                   {isSendingEmail ? (
@@ -216,14 +261,27 @@ export function AdminRegistrationDrawer({
                   ) : (
                     <Mail className="size-4" />
                   )}
-                  Envoyer email de confirmation
+                  Email demande d&apos;inscription
+                </button>
+                <button
+                  type="button"
+                  onClick={onSendPaymentEmail}
+                  disabled={isSendingPayment || isSendingEmail || isSaving || isDeleting}
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#546b43]/40 bg-[#eef0e6] px-4 text-sm font-medium text-[#3f5333] transition hover:border-[#546b43] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40 disabled:opacity-50 sm:w-auto"
+                >
+                  {isSendingPayment ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Mail className="size-4" />
+                  )}
+                  Email confirmation paiement
                 </button>
               </div>
             </div>
 
             <button
               type="submit"
-              disabled={isSaving || isDeleting || isSendingEmail}
+              disabled={isSaving || isDeleting || isSendingEmail || isSendingPayment}
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#202819] px-6 text-sm font-medium text-[#fbefdf] shadow-[0_10px_22px_rgba(32,40,25,0.18)] transition hover:bg-[#3c4130] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40 disabled:opacity-60 sm:w-auto"
             >
               {isSaving ? (
@@ -317,6 +375,9 @@ function emptyDefaults(): AdminRegistrationInput {
     gender: "homme",
     payment_method: "paypal",
     payment_status: "pending",
+    installment_count: "",
+    installment_first_date: "",
+    installment_dates: [],
     notes: "",
   };
 }

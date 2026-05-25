@@ -216,7 +216,7 @@ export default async function MerciPage({
             )}
             <div className="mt-4 space-y-2.5">
               <SummaryRow label="Séminaire" value={seminarTitle} />
-              <SummaryRow label="Tarif" value={seminarPrice} />
+              <SummaryRow label="Tarif" value={seminarPrice} highlight />
               <SummaryRow
                 label="Mode de paiement"
                 value={chosenPayment ? paymentMethodLabels[chosenPayment] : "À confirmer"}
@@ -273,7 +273,27 @@ function NextItem({
   );
 }
 
-function SummaryRow({ label, value }: { label: string; value: string }) {
+function SummaryRow({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
+  if (highlight) {
+    return (
+      <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--emerald)] bg-[var(--emerald)] px-4 py-3.5 shadow-[0_10px_22px_rgba(13,31,20,0.18)]">
+        <div className="text-[10px] uppercase tracking-[0.18em] text-[var(--gold-soft)]">
+          {label}
+        </div>
+        <div className="font-display text-[20px] leading-none text-[var(--gold-soft)] sm:text-[24px]">
+          {value}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="rounded-lg border border-[var(--line-soft)] bg-[var(--paper)] px-4 py-3">
       <div className="text-[10px] uppercase tracking-[0.18em] text-[var(--ink-fade)]">

@@ -11,10 +11,15 @@ import {
 } from "@react-email/components";
 import * as React from "react";
 
+export interface SeminarLine {
+  title: string;
+  price?: number | null;
+}
+
 interface ReceivedEmailProps {
   firstName: string;
   lastName: string;
-  seminarTitles: string[];
+  seminars: SeminarLine[];
   paymentMethod: string;
 }
 
@@ -25,12 +30,12 @@ const CASH_WHATSAPP = "+33 7 81 69 14 96";
 export const ReceivedEmail = ({
   firstName,
   lastName,
-  seminarTitles,
+  seminars,
   paymentMethod,
 }: ReceivedEmailProps) => {
   const method = (paymentMethod || "").toLowerCase();
   const fullName = `${firstName} ${lastName}`.trim();
-  const multiple = seminarTitles.length > 1;
+  const multiple = seminars.length > 1;
 
   return (
     <Html>
@@ -51,9 +56,12 @@ export const ReceivedEmail = ({
           </Text>
 
           <Section style={section}>
-            {seminarTitles.map((title, i) => (
+            {seminars.map((s, i) => (
               <Text key={i} style={listItem}>
-                • {title}
+                • {s.title}
+                {s.price != null && (
+                  <span style={priceTag}> — {s.price} €</span>
+                )}
               </Text>
             ))}
           </Section>
@@ -76,11 +84,16 @@ export const ReceivedEmail = ({
             <a href={`mailto:${PAYPAL_EMAIL}`} style={link}>
               {PAYPAL_EMAIL}
             </a>
-            <br />
-            <em style={subtle}>
-              Envoi d&apos;argent entre proches, sans commentaire.
-            </em>
           </Text>
+
+          <Section style={warnBox}>
+            <Text style={warnText}>
+              ⚠️ <strong>TRÈS IMPORTANT</strong> — effectuez le paiement en{" "}
+              <strong>envoi d&apos;argent entre proches</strong> et{" "}
+              <strong>SANS AUCUN commentaire</strong>, sinon le paiement
+              risque d&apos;être bloqué. 🙏
+            </Text>
+          </Section>
 
           <Text style={text}>
             <strong>Revolut</strong> : <code style={code}>@{REVOLUT_HANDLE}</code>
@@ -88,7 +101,7 @@ export const ReceivedEmail = ({
 
           <Text style={text}>
             <strong>En espèces</strong> — merci de prendre contact par WhatsApp
-            sur ce numéro pour convenir d&apos;une remise en main propre :{" "}
+            sur ce numéro et communiquer votre nom et prénom pour convenir d&apos;une remise en main propre :{" "}
             <a href={`https://wa.me/${CASH_WHATSAPP.replace(/[^0-9]/g, "")}`} style={link}>
               {CASH_WHATSAPP}
             </a>
@@ -157,9 +170,21 @@ const text = {
   margin: "10px 0",
 };
 
-const subtle = {
-  color: "#5e6353",
-  fontSize: "13px",
+const warnBox = {
+  background: "#fbe9d3",
+  border: "1px solid #e2a04a",
+  borderLeft: "5px solid #c97a16",
+  borderRadius: "8px",
+  padding: "12px 16px",
+  margin: "6px 0 14px",
+};
+
+const warnText = {
+  color: "#7a4a0d",
+  fontSize: "15px",
+  fontWeight: 600 as const,
+  lineHeight: "23px",
+  margin: 0,
 };
 
 const section = {
@@ -170,6 +195,11 @@ const listItem = {
   color: "#202819",
   fontSize: "15px",
   margin: "4px 0",
+};
+
+const priceTag = {
+  color: "#546b43",
+  fontWeight: 700 as const,
 };
 
 const hr = {

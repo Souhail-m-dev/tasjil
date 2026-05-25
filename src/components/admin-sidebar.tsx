@@ -10,6 +10,8 @@ import {
   CalendarDays,
   Menu,
   X,
+  PanelLeftClose,
+  PanelLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AdminSignOut } from "@/components/admin-sign-out";
@@ -30,9 +32,21 @@ const navItems: NavItem[] = [
 export function AdminSidebar({ email }: { email: string | null }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   const isActive = (item: NavItem) =>
     item.matchPrefix ? pathname.startsWith(item.href) : pathname === item.href;
+
+  useEffect(() => {
+    setCollapsed(localStorage.getItem("admin-sidebar-collapsed") === "1");
+  }, []);
+
+  const toggleCollapsed = () =>
+    setCollapsed((c) => {
+      const next = !c;
+      localStorage.setItem("admin-sidebar-collapsed", next ? "1" : "0");
+      return next;
+    });
 
   useEffect(() => {
     setOpen(false);
@@ -52,25 +66,35 @@ export function AdminSidebar({ email }: { email: string | null }) {
     };
   }, [open]);
 
-  const renderNav = (onNavigate?: () => void) => (
+  const renderNav = ({
+    onNavigate,
+    collapsed = false,
+  }: { onNavigate?: () => void; collapsed?: boolean } = {}) => (
     <>
-      <div className="flex items-center justify-between border-b border-[#d6cfc0] px-5 py-4">
-        <Link
-          href="/admin"
-          onClick={onNavigate}
-          className="flex items-center gap-3"
-        >
-          <Image src="/logo.png" alt="" width={36} height={36} className="rounded-md" />
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.28em] text-[#546b43]">
-              Espace
-            </p>
-            <p className="font-display text-lg leading-tight text-[#202819]">
-              Administration
-            </p>
-          </div>
-        </Link>
-        {onNavigate && (
+      <div
+        className={cn(
+          "flex items-center border-b border-[#d6cfc0] py-4",
+          collapsed ? "justify-center px-2" : "justify-between px-5",
+        )}
+      >
+        {!collapsed && (
+          <Link
+            href="/admin"
+            onClick={onNavigate}
+            className="flex min-w-0 items-center gap-3"
+          >
+            <Image src="/logo.png" alt="" width={36} height={36} className="shrink-0 rounded-md" />
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.28em] text-[#546b43]">
+                Espace
+              </p>
+              <p className="font-display text-lg leading-tight text-[#202819]">
+                Administration
+              </p>
+            </div>
+          </Link>
+        )}
+        {onNavigate ? (
           <button
             type="button"
             onClick={onNavigate}
@@ -78,6 +102,16 @@ export function AdminSidebar({ email }: { email: string | null }) {
             className="inline-flex size-11 items-center justify-center rounded-md text-[#3c4130] transition hover:bg-[#efe4cc] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40"
           >
             <X className="size-5" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            aria-label={collapsed ? "Déployer le menu" : "Réduire le menu"}
+            aria-expanded={!collapsed}
+            className="inline-flex size-11 items-center justify-center rounded-md text-[#3c4130] transition hover:bg-[#efe4cc] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40"
+          >
+            {collapsed ? <PanelLeft className="size-5" /> : <PanelLeftClose className="size-5" />}
           </button>
         )}
       </div>
@@ -93,8 +127,10 @@ export function AdminSidebar({ email }: { email: string | null }) {
                   href={item.href}
                   onClick={onNavigate}
                   aria-current={active ? "page" : undefined}
+                  title={collapsed ? item.label : undefined}
                   className={cn(
-                    "group flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40",
+                    "group flex min-h-11 items-center gap-3 rounded-lg py-2.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40",
+                    collapsed ? "justify-center px-0" : "px-3",
                     active
                       ? "bg-[#546b43] text-[#fbefdf] shadow-[0_8px_18px_rgba(84,107,67,0.25)]"
                       : "text-[#3c4130] hover:bg-[#efe4cc] hover:text-[#202819]",
@@ -106,7 +142,7 @@ export function AdminSidebar({ email }: { email: string | null }) {
                       active ? "text-[#fbefdf]" : "text-[#5e6353] group-hover:text-[#202819]",
                     )}
                   />
-                  <span>{item.label}</span>
+                  {!collapsed && <span>{item.label}</span>}
                 </Link>
               </li>
             );
@@ -114,19 +150,21 @@ export function AdminSidebar({ email }: { email: string | null }) {
         </ul>
       </nav>
 
-      <div className="border-t border-[#d6cfc0] px-4 py-4">
-        {email && (
-          <div className="mb-3 min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.22em] text-[#546b43]">
-              Connecté
-            </p>
-            <p className="mt-0.5 truncate font-serif text-[13px] text-[#202819]">
-              {email}
-            </p>
-          </div>
-        )}
-        <AdminSignOut />
-      </div>
+      {!collapsed && (
+        <div className="border-t border-[#d6cfc0] px-4 py-4">
+          {email && (
+            <div className="mb-3 min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.22em] text-[#546b43]">
+                Connecté
+              </p>
+              <p className="mt-0.5 truncate font-serif text-[13px] text-[#202819]">
+                {email}
+              </p>
+            </div>
+          )}
+          <AdminSignOut />
+        </div>
+      )}
     </>
   );
 
@@ -161,7 +199,7 @@ export function AdminSidebar({ email }: { email: string | null }) {
             style={{ backgroundColor: "#f7eedd" }}
             className="absolute inset-y-0 left-0 z-10 flex w-[18rem] max-w-[85%] flex-col border-r border-[#d6cfc0] shadow-[0_20px_50px_rgba(32,40,25,0.25)]"
           >
-            {renderNav(() => setOpen(false))}
+            {renderNav({ onNavigate: () => setOpen(false) })}
           </aside>
         </div>
       )}
@@ -169,9 +207,12 @@ export function AdminSidebar({ email }: { email: string | null }) {
       {/* Desktop rail */}
       <aside
         style={{ backgroundColor: "#f7eedd" }}
-        className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-r border-[#d6cfc0] lg:flex"
+        className={cn(
+          "sticky top-0 hidden h-screen shrink-0 flex-col border-r border-[#d6cfc0] transition-[width] duration-200 lg:flex",
+          collapsed ? "w-[4.75rem]" : "w-72",
+        )}
       >
-        {renderNav()}
+        {renderNav({ collapsed })}
       </aside>
     </>
   );

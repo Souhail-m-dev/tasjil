@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/client";
 const STATUS_OPTIONS = [
   { value: "pending", label: "En attente" },
   { value: "paid", label: "Payé" },
+  { value: "installments", label: "Plusieurs fois" },
+  { value: "offert", label: "Offert" },
   { value: "cancelled", label: "Annulé" },
 ] as const;
 
@@ -17,7 +19,7 @@ export function RegistrationStatusSelect({
   registrationId,
   initialStatus,
 }: {
-  registrationId: string;
+  registrationId: string | string[];
   initialStatus: string;
 }) {
   const router = useRouter();
@@ -29,10 +31,11 @@ export function RegistrationStatusSelect({
     setStatus(next);
     startTransition(async () => {
       const supabase = createClient();
+      const ids = Array.isArray(registrationId) ? registrationId : [registrationId];
       const { error } = await supabase
         .from("registrations")
         .update({ payment_status: next })
-        .eq("id", registrationId);
+        .in("id", ids);
 
       if (error) {
         setStatus(previous);
@@ -50,7 +53,11 @@ export function RegistrationStatusSelect({
       ? "#546b43"
       : status === "cancelled"
         ? "#a8321b"
-        : "#e3cc9e";
+        : status === "installments"
+          ? "#c98a27"
+          : status === "offert"
+            ? "#8a6db5"
+            : "#e3cc9e";
   const fg = status === "pending" ? "#3c4130" : "#fbefdf";
 
   return (

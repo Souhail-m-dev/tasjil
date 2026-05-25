@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, NotebookPen } from "lucide-react";
+import { Search, NotebookPen, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AdminRegistrationDrawer } from "@/components/admin-registration-drawer";
 import { AdminAddParticipant } from "@/components/admin-add-participant";
@@ -20,6 +20,45 @@ type Seminar = Database["public"]["Tables"]["seminars"]["Row"];
 
 type StatusFilter = PaymentStatus | "all";
 
+type Person = {
+  key: string;
+  name: string;
+  email: string;
+  regs: Registration[];
+};
+
+function groupByPerson(regs: Registration[]): Person[] {
+  const map = new Map<string, Person>();
+  for (const r of regs) {
+    const key = (r.email ?? "").toLowerCase();
+    let p = map.get(key);
+    if (!p) {
+      p = { key, name: `${r.first_name} ${r.last_name}`.trim(), email: r.email, regs: [] };
+      map.set(key, p);
+    }
+    p.regs.push(r);
+  }
+  return Array.from(map.values());
+}
+
+function commonValue(values: (string | null)[]): string | null {
+  const set = new Set(values.map((v) => v ?? ""));
+  return set.size === 1 ? [...set][0] || null : null;
+}
+
+function latestDate(regs: Registration[]): string | null {
+  const times = regs
+    .map((r) => r.created_at)
+    .filter(Boolean)
+    .map((d) => new Date(d as string).getTime());
+  if (times.length === 0) return null;
+  return new Date(Math.max(...times)).toLocaleDateString("fr-FR");
+}
+
+function seminarSummary(regs: Registration[]): string {
+  return regs.map((r) => r.seminars?.title ?? "—").join(" · ");
+}
+
 export function AdminRegistrationsTable({
   registrations,
   seminars,
@@ -29,28 +68,35 @@ export function AdminRegistrationsTable({
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [selected, setSelected] = useState<Registration | null>(null);
+  const [selected, setSelected] = useState<Person | null>(null);
+
+  const persons = useMemo(() => groupByPerson(registrations), [registrations]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return registrations.filter((r) => {
-      if (statusFilter !== "all" && r.payment_status !== statusFilter) return false;
+    return persons.filter((p) => {
+      if (
+        statusFilter !== "all" &&
+        !p.regs.some((r) => (r.payment_status ?? "pending") === statusFilter)
+      )
+        return false;
       if (!q) return true;
-      const hay = [
-        r.first_name,
-        r.last_name,
-        r.email,
-        r.seminars?.title,
-        r.payment_method,
-        r.notes,
-        r.telegram_handle,
-      ]
+      const hay = p.regs
+        .flatMap((r) => [
+          r.first_name,
+          r.last_name,
+          r.email,
+          r.seminars?.title,
+          r.payment_method,
+          r.notes,
+          r.telegram_handle,
+        ])
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [registrations, query, statusFilter]);
+  }, [persons, query, statusFilter]);
 
   return (
     <section className="overflow-hidden rounded-2xl border border-[#d6cfc0] bg-[#fbefdf] shadow-[0_14px_28px_rgba(32,40,25,0.06)]">
@@ -58,10 +104,13 @@ export function AdminRegistrationsTable({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-[0.22em] text-[#546b43] sm:text-[11px] sm:tracking-[0.28em]">
-              Inscriptions
+              Inscrits
             </p>
             <p className="mt-0.5 font-serif text-base text-[#202819] sm:text-lg">
-              {filtered.length} / {registrations.length} entrée{registrations.length > 1 ? "s" : ""}
+              {filtered.length} / {persons.length} personne{persons.length > 1 ? "s" : ""}
+              <span className="ml-2 text-[12px] text-[#5e6353]">
+                · {registrations.length} inscription{registrations.length > 1 ? "s" : ""}
+              </span>
             </p>
           </div>
           <AdminAddParticipant seminars={seminars} />
@@ -101,49 +150,53 @@ export function AdminRegistrationsTable({
 
       {/* Mobile cards */}
       <div className="divide-y divide-[#e6ddca] md:hidden">
-        {filtered.map((r) => (
-          <button
-            key={r.id}
-            type="button"
-            onClick={() => setSelected(r)}
-            className="block w-full px-4 py-3 text-left transition hover:bg-[#f7eedd]"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="truncate font-serif text-[15px] text-[#202819]">
-                  {r.first_name} {r.last_name}
-                </p>
-                <p className="truncate text-[12px] text-[#3c4130]">{r.email}</p>
+        {filtered.map((p) => {
+          const multi = p.regs.length > 1;
+          const ids = p.regs.map((r) => r.id);
+          return (
+            <button
+              key={p.key}
+              type="button"
+              onClick={() => setSelected(p)}
+              className="block w-full px-4 py-3 text-left transition hover:bg-[#f7eedd]"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="flex items-center gap-1.5 truncate font-serif text-[15px] text-[#202819]">
+                    {multi && (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#546b43] px-2 py-0.5 text-[10px] font-medium text-[#fbefdf]">
+                        <Layers className="size-3" />
+                        {p.regs.length}
+                      </span>
+                    )}
+                    {p.name}
+                  </p>
+                  <p className="truncate text-[12px] text-[#3c4130]">{p.email}</p>
+                </div>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <RegistrationStatusSelect
+                    registrationId={multi ? ids : ids[0]}
+                    initialStatus={p.regs[0].payment_status ?? "pending"}
+                  />
+                </div>
               </div>
-              <div onClick={(e) => e.stopPropagation()}>
-                <RegistrationStatusSelect
-                  registrationId={r.id}
-                  initialStatus={r.payment_status ?? "pending"}
-                />
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#5e6353]">
+                <span className="truncate">{seminarSummary(p.regs)}</span>
+                <span>·</span>
+                <span>{commonValue(p.regs.map((r) => r.payment_method)) ?? "Mixte"}</span>
+                {p.regs.some((r) => r.notes) && (
+                  <span className="inline-flex items-center gap-1 text-[#546b43]">
+                    <NotebookPen className="size-3" />
+                    note
+                  </span>
+                )}
               </div>
-            </div>
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#5e6353]">
-              <span className="truncate">{r.seminars?.title ?? "—"}</span>
-              <span>·</span>
-              <span>{r.payment_method ?? "—"}</span>
-              {r.created_at && (
-                <>
-                  <span>·</span>
-                  <span>{new Date(r.created_at).toLocaleDateString("fr-FR")}</span>
-                </>
-              )}
-              {r.notes && (
-                <span className="inline-flex items-center gap-1 text-[#546b43]">
-                  <NotebookPen className="size-3" />
-                  note
-                </span>
-              )}
-            </div>
-          </button>
-        ))}
+            </button>
+          );
+        })}
         {filtered.length === 0 && (
           <p className="px-4 py-8 text-center text-sm text-[#5e6353]">
-            Aucune inscription.
+            Aucun inscrit.
           </p>
         )}
       </div>
@@ -163,50 +216,64 @@ export function AdminRegistrationsTable({
             </tr>
           </thead>
           <tbody>
-            {filtered.map((r) => (
-              <tr
-                key={r.id}
-                onClick={() => setSelected(r)}
-                className="cursor-pointer border-t border-[#e6ddca] transition hover:bg-[#f7eedd]"
-              >
-                <td className="px-5 py-3 font-serif text-[#202819]">
-                  {r.first_name} {r.last_name}
-                </td>
-                <td className="px-5 py-3 text-[#3c4130]">{r.email}</td>
-                <td className="max-w-[16rem] truncate px-5 py-3 text-[#3c4130]">
-                  {r.seminars?.title ?? "—"}
-                </td>
-                <td className="px-5 py-3 text-[#3c4130]">{r.payment_method ?? "—"}</td>
-                <td className="px-5 py-3" onClick={(e) => e.stopPropagation()}>
-                  <RegistrationStatusSelect
-                    registrationId={r.id}
-                    initialStatus={r.payment_status ?? "pending"}
-                  />
-                </td>
-                <td className="px-5 py-3 text-[#3c4130]">
-                  {r.notes ? (
-                    <span className="inline-flex items-center gap-1 text-[12px] text-[#546b43]">
-                      <NotebookPen className="size-3.5" />
-                      <span className="max-w-[10rem] truncate">{r.notes}</span>
+            {filtered.map((p) => {
+              const multi = p.regs.length > 1;
+              const ids = p.regs.map((r) => r.id);
+              const method = commonValue(p.regs.map((r) => r.payment_method));
+              const note = p.regs.map((r) => r.notes).find(Boolean) ?? null;
+              return (
+                <tr
+                  key={p.key}
+                  onClick={() => setSelected(p)}
+                  className="cursor-pointer border-t border-[#e6ddca] transition hover:bg-[#f7eedd]"
+                >
+                  <td className="px-5 py-3 font-serif text-[#202819]">
+                    <span className="flex items-center gap-2">
+                      {multi && (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#546b43] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-[#fbefdf]">
+                          <Layers className="size-3" />
+                          {p.regs.length}
+                        </span>
+                      )}
+                      {p.name}
                     </span>
-                  ) : (
-                    <span className="text-[#98927f]">—</span>
-                  )}
-                </td>
-                <td className="px-5 py-3 text-xs text-[#5e6353]">
-                  {r.created_at
-                    ? new Date(r.created_at).toLocaleDateString("fr-FR")
-                    : "—"}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="px-5 py-3 text-[#3c4130]">{p.email}</td>
+                  <td className="max-w-[18rem] truncate px-5 py-3 text-[#3c4130]">
+                    {multi ? `${p.regs.length} séminaires` : (p.regs[0].seminars?.title ?? "—")}
+                  </td>
+                  <td className="px-5 py-3 text-[#3c4130]">
+                    {method ?? (multi ? "Mixte" : "—")}
+                  </td>
+                  <td className="px-5 py-3" onClick={(e) => e.stopPropagation()}>
+                    <RegistrationStatusSelect
+                      registrationId={multi ? ids : ids[0]}
+                      initialStatus={p.regs[0].payment_status ?? "pending"}
+                    />
+                  </td>
+                  <td className="px-5 py-3 text-[#3c4130]">
+                    {note ? (
+                      <span className="inline-flex items-center gap-1 text-[12px] text-[#546b43]">
+                        <NotebookPen className="size-3.5" />
+                        <span className="max-w-[10rem] truncate">{note}</span>
+                      </span>
+                    ) : (
+                      <span className="text-[#98927f]">—</span>
+                    )}
+                  </td>
+                  <td className="px-5 py-3 text-xs text-[#5e6353]">
+                    {latestDate(p.regs) ?? "—"}
+                  </td>
+                </tr>
+              );
+            })}
             {filtered.length === 0 && (
               <tr>
                 <td
                   colSpan={7}
                   className="px-5 py-10 text-center text-sm text-[#5e6353]"
                 >
-                  Aucune inscription.
+                  Aucun inscrit.
                 </td>
               </tr>
             )}
@@ -215,7 +282,7 @@ export function AdminRegistrationsTable({
       </div>
 
       <AdminRegistrationDrawer
-        registration={selected}
+        registrations={selected?.regs ?? null}
         seminars={seminars}
         open={!!selected}
         onClose={() => setSelected(null)}

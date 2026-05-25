@@ -46,6 +46,9 @@ export type Database = {
           first_name: string
           gender: string | null
           id: string
+          installment_count: number | null
+          installment_dates: Json | null
+          installment_first_date: string | null
           last_name: string
           notes: string | null
           payment_method: string | null
@@ -68,6 +71,9 @@ export type Database = {
           first_name: string
           gender?: string | null
           id?: string
+          installment_count?: number | null
+          installment_dates?: Json | null
+          installment_first_date?: string | null
           last_name: string
           notes?: string | null
           payment_method?: string | null
@@ -90,6 +96,9 @@ export type Database = {
           first_name?: string
           gender?: string | null
           id?: string
+          installment_count?: number | null
+          installment_dates?: Json | null
+          installment_first_date?: string | null
           last_name?: string
           notes?: string | null
           payment_method?: string | null

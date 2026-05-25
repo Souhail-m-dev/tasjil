@@ -3,16 +3,19 @@
 import { render } from "@react-email/render";
 import { resend } from "@/lib/email/resend";
 import { ReceivedEmail } from "@/lib/email/templates/ReceivedEmail";
+import { PaymentConfirmedEmail } from "@/lib/email/templates/PaymentConfirmedEmail";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 interface SendConfirmationEmailParams {
   registrationIds: string[];
   force?: boolean;
+  template?: "received" | "payment";
 }
 
 export async function sendConfirmationEmail({
   registrationIds,
   force = false,
+  template = "received",
 }: SendConfirmationEmailParams) {
   try {
     console.log("--- Email Action Debug ---");
@@ -44,7 +47,8 @@ export async function sendConfirmationEmail({
       .select(`
         *,
         seminars (
-          title
+          title,
+          price_eur
         )
       `)
       .in("id", registrationIds);
@@ -82,27 +86,43 @@ export async function sendConfirmationEmail({
         continue;
       }
 
-      const seminarTitles = userRegs
-        .map(reg => reg.seminars?.title)
-        .filter(Boolean) as string[];
+      const seminarLines = userRegs
+        .map(reg =>
+          reg.seminars
+            ? { title: reg.seminars.title, price: reg.seminars.price_eur ?? null }
+            : null,
+        )
+        .filter(Boolean) as { title: string; price: number | null }[];
+      const lines = seminarLines.length > 0 ? seminarLines : [{ title: "Séminaire", price: null }];
 
-      console.log(`[Email] Rendering template for ${email} with ${seminarTitles.length} seminars`);
+      console.log(`[Email] Rendering ${template} template for ${email} with ${lines.length} seminars`);
       const emailHtml = await render(
-        ReceivedEmail({
-          firstName: firstReg.first_name,
-          lastName: firstReg.last_name,
-          seminarTitles: seminarTitles.length > 0 ? seminarTitles : ["Séminaire"],
-          paymentMethod: firstReg.payment_method || "Non spécifié",
-        })
+        template === "payment"
+          ? PaymentConfirmedEmail({
+              firstName: firstReg.first_name,
+              lastName: firstReg.last_name,
+              seminars: lines,
+            })
+          : ReceivedEmail({
+              firstName: firstReg.first_name,
+              lastName: firstReg.last_name,
+              seminars: lines,
+              paymentMethod: firstReg.payment_method || "Non spécifié",
+            })
       );
+
+      const subject =
+        template === "payment"
+          ? "Confirmation de paiement — inscription confirmée"
+          : lines.length > 1
+            ? "Confirmation de vos inscriptions"
+            : "Confirmation de votre inscription";
 
       try {
         const { data, error: sendError } = await resend.emails.send({
           from: `${fromName} <${fromEmail}>`,
           to: email,
-          subject: seminarTitles.length > 1
-            ? "Confirmation de vos inscriptions"
-            : "Confirmation de votre inscription",
+          subject,
           html: emailHtml,
           replyTo: replyTo || undefined,
           headers: {
@@ -117,6 +137,11 @@ export async function sendConfirmationEmail({
         }
 
         console.log(`[Email] Resend success for ${email}. ID: ${data.id}`);
+
+        if (template === "payment") {
+          results.push({ email, status: "success", messageId: data.id });
+          continue;
+        }
 
         const { error: updateError } = await supabaseAdmin
           .from("registrations")

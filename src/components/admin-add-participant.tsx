@@ -39,6 +39,9 @@ export function AdminAddParticipant({ seminars }: { seminars: Seminar[] }) {
       gender: "homme",
       payment_method: "paypal",
       payment_status: "pending",
+      installment_count: "",
+      installment_first_date: "",
+      installment_dates: [],
       notes: "",
     },
   });
