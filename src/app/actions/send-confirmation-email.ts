@@ -4,12 +4,13 @@ import { render } from "@react-email/render";
 import { resend } from "@/lib/email/resend";
 import { ReceivedEmail } from "@/lib/email/templates/ReceivedEmail";
 import { PaymentConfirmedEmail } from "@/lib/email/templates/PaymentConfirmedEmail";
+import { ReminderEmail } from "@/lib/email/templates/ReminderEmail";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 interface SendConfirmationEmailParams {
   registrationIds: string[];
   force?: boolean;
-  template?: "received" | "payment";
+  template?: "received" | "payment" | "reminder";
 }
 
 export async function sendConfirmationEmail({
@@ -103,20 +104,29 @@ export async function sendConfirmationEmail({
               lastName: firstReg.last_name,
               seminars: lines,
             })
-          : ReceivedEmail({
-              firstName: firstReg.first_name,
-              lastName: firstReg.last_name,
-              seminars: lines,
-              paymentMethod: firstReg.payment_method || "Non spécifié",
-            })
+          : template === "reminder"
+            ? ReminderEmail({
+                firstName: firstReg.first_name,
+                lastName: firstReg.last_name,
+                seminars: lines,
+                paymentMethod: firstReg.payment_method || "Non spécifié",
+              })
+            : ReceivedEmail({
+                firstName: firstReg.first_name,
+                lastName: firstReg.last_name,
+                seminars: lines,
+                paymentMethod: firstReg.payment_method || "Non spécifié",
+              })
       );
 
       const subject =
         template === "payment"
           ? "Confirmation de paiement — inscription confirmée"
-          : lines.length > 1
-            ? "Confirmation de vos inscriptions"
-            : "Confirmation de votre inscription";
+          : template === "reminder"
+            ? "Rappel — paiement en attente pour votre inscription"
+            : lines.length > 1
+              ? "Confirmation de vos inscriptions"
+              : "Confirmation de votre inscription";
 
       try {
         const { data, error: sendError } = await resend.emails.send({
@@ -138,7 +148,7 @@ export async function sendConfirmationEmail({
 
         console.log(`[Email] Resend success for ${email}. ID: ${data.id}`);
 
-        if (template === "payment") {
+        if (template === "payment" || template === "reminder") {
           results.push({ email, status: "success", messageId: data.id });
           continue;
         }

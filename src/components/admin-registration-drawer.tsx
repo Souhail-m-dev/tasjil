@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Loader2, Mail, Save, Trash2, X } from "lucide-react";
+import { BellRing, Loader2, Mail, Save, Trash2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { sendConfirmationEmail } from "@/app/actions/send-confirmation-email";
 import { formatDate } from "@/lib/format";
@@ -42,12 +42,14 @@ export function AdminRegistrationDrawer({
   const [isDeleting, startDeleting] = useTransition();
   const [isSendingEmail, startSendingEmail] = useTransition();
   const [isSendingPayment, startSendingPayment] = useTransition();
+  const [isSendingReminder, startSendingReminder] = useTransition();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const regs = registrations ?? [];
   const primary = regs[0] ?? null;
   const isCombined = regs.length > 1;
   const ids = regs.map((r) => r.id);
+  const hasPending = regs.some((r) => (r.payment_status ?? "pending") === "pending");
 
   useEffect(() => setMounted(true), []);
 
@@ -178,6 +180,22 @@ export function AdminRegistrationDrawer({
     });
   };
 
+  const onSendReminderEmail = () => {
+    if (!primary) return;
+    startSendingReminder(async () => {
+      const { success } = await sendConfirmationEmail({
+        registrationIds: ids,
+        force: true,
+        template: "reminder",
+      });
+      if (success) {
+        toast.success("Rappel de paiement envoyé");
+      } else {
+        toast.error("Échec de l'envoi.");
+      }
+    });
+  };
+
   const overlay = (
     <div
       role="dialog"
@@ -233,7 +251,7 @@ export function AdminRegistrationDrawer({
               <button
                 type="button"
                 onClick={onDelete}
-                disabled={isDeleting || isSaving || isSendingEmail || isSendingPayment}
+                disabled={isDeleting || isSaving || isSendingEmail || isSendingPayment || isSendingReminder}
                 className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#a8321b]/40 bg-[#fbe6df] px-4 text-sm font-medium text-[#a8321b] transition hover:border-[#a8321b] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#a8321b]/30 disabled:opacity-50 sm:w-auto"
               >
                 {isDeleting ? (
@@ -253,7 +271,7 @@ export function AdminRegistrationDrawer({
                 <button
                   type="button"
                   onClick={onSendEmail}
-                  disabled={isSendingEmail || isSendingPayment || isSaving || isDeleting}
+                  disabled={isSendingEmail || isSendingPayment || isSendingReminder || isSaving || isDeleting}
                   className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#cdc5b3] bg-[#fbefdf] px-4 text-sm font-medium text-[#3c4130] transition hover:border-[#546b43] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40 disabled:opacity-50 sm:w-auto"
                 >
                   {isSendingEmail ? (
@@ -266,7 +284,7 @@ export function AdminRegistrationDrawer({
                 <button
                   type="button"
                   onClick={onSendPaymentEmail}
-                  disabled={isSendingPayment || isSendingEmail || isSaving || isDeleting}
+                  disabled={isSendingPayment || isSendingEmail || isSendingReminder || isSaving || isDeleting}
                   className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#546b43]/40 bg-[#eef0e6] px-4 text-sm font-medium text-[#3f5333] transition hover:border-[#546b43] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40 disabled:opacity-50 sm:w-auto"
                 >
                   {isSendingPayment ? (
@@ -276,12 +294,27 @@ export function AdminRegistrationDrawer({
                   )}
                   Email confirmation paiement
                 </button>
+                {hasPending && (
+                  <button
+                    type="button"
+                    onClick={onSendReminderEmail}
+                    disabled={isSendingReminder || isSendingPayment || isSendingEmail || isSaving || isDeleting}
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#c97a16]/50 bg-[#fbe9d3] px-4 text-sm font-medium text-[#7a4a0d] transition hover:border-[#c97a16] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c97a16]/40 disabled:opacity-50 sm:w-auto"
+                  >
+                    {isSendingReminder ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <BellRing className="size-4" />
+                    )}
+                    Rappel paiement
+                  </button>
+                )}
               </div>
             </div>
 
             <button
               type="submit"
-              disabled={isSaving || isDeleting || isSendingEmail || isSendingPayment}
+              disabled={isSaving || isDeleting || isSendingEmail || isSendingPayment || isSendingReminder}
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#202819] px-6 text-sm font-medium text-[#fbefdf] shadow-[0_10px_22px_rgba(32,40,25,0.18)] transition hover:bg-[#3c4130] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40 disabled:opacity-60 sm:w-auto"
             >
               {isSaving ? (
