@@ -68,7 +68,7 @@ export function RegistrationForm({
   initialSeminarId?: string;
 }) {
   const router = useRouter();
-  const [stepIndex, setStepIndex] = useState(initialSeminarId ? 1 : 0);
+  const [stepIndex, setStepIndex] = useState(0);
   const [direction, setDirection] = useState<"fwd" | "back">("fwd");
   const [isPending, startTransition] = useTransition();
   const submittingRef = useRef(false);
