@@ -9,11 +9,12 @@ import {
   HelpCircle,
   Calendar,
   Clock,
+  CalendarClock,
   Send,
   PlaySquare,
   ArrowRight,
 } from "lucide-react";
-import { teacher, getSeminarDisplay } from "@/lib/seminar-display";
+import { teacher, getSeminarDisplay, seminarSchedule } from "@/lib/seminar-display";
 import { formatDate } from "@/lib/format";
 import { InscriptionButton } from "@/components/inscription-button";
 import { Mihrab } from "@/components/ui/mihrab";
@@ -172,7 +173,7 @@ export default async function Landing() {
           </div>
 
           <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-3 sm:gap-6">
-            <FormatItem icon={<Video />} title="3 cours par semaine" sub="En direct sur Zoom — Q/R en fin de cours" />
+            <FormatItem icon={<Video />} title="3 cours par semaine" sub="Lun · Mer · Ven, 19h30–20h30 — en direct sur Zoom" />
             <FormatItem icon={<PlayCircle />} title="Cours enregistrés" sub="Accès illimité aux replays pendant le séminaire" />
             <FormatItem icon={<BookOpen />} title="Notes de cours" sub="Synthèse écrite transmise après chaque séance" />
           </div>
@@ -468,6 +469,8 @@ function SeminarCard({ seminar, umber }: { seminar: Seminar; umber: boolean }) {
       <dl className="mt-6 grid grid-cols-[auto_1fr] gap-x-3 gap-y-3 text-[13px] text-[var(--ink-soft,#434843)] sm:text-[14px]">
         <dt className="flex items-center text-[var(--emerald)]"><Calendar className="size-4" /></dt>
         <dd>{dates}</dd>
+        <dt className="flex items-center text-[var(--emerald)]"><CalendarClock className="size-4" /></dt>
+        <dd>{seminarSchedule}</dd>
         {sessions && (
           <>
             <dt className="flex items-center text-[var(--emerald)]"><Clock className="size-4" /></dt>
