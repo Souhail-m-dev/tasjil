@@ -34,7 +34,7 @@ export default async function AdminDashboardLayout({
     >
       <AdminSidebar email={user.email ?? null} />
       <main className="min-w-0 flex-1">
-        <div className="mx-auto w-full max-w-7xl px-3 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-12">
+        <div className="mx-auto w-full max-w-[1600px] px-3 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-12">
           {children}
         </div>
       </main>

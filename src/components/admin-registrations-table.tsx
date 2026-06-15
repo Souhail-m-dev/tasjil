@@ -5,6 +5,7 @@ import { Search, NotebookPen, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AdminRegistrationDrawer } from "@/components/admin-registration-drawer";
 import { AdminAddParticipant } from "@/components/admin-add-participant";
+import { AdminBulkEmailDrawer } from "@/components/admin-bulk-email-drawer";
 import { RegistrationStatusSelect } from "@/components/registration-status-select";
 import {
   paymentStatuses,
@@ -69,6 +70,7 @@ export function AdminRegistrationsTable({
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [selected, setSelected] = useState<Person | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
 
   const persons = useMemo(() => groupByPerson(registrations), [registrations]);
 
@@ -98,6 +100,31 @@ export function AdminRegistrationsTable({
     });
   }, [persons, query, statusFilter]);
 
+  const filteredIds = useMemo(
+    () => {
+      const activePersons = selectedKeys.size > 0 
+        ? filtered.filter(p => selectedKeys.has(p.key))
+        : filtered;
+      return activePersons.flatMap((p) => p.regs.map((r) => r.id));
+    },
+    [filtered, selectedKeys],
+  );
+
+  const toggleAll = () => {
+    if (selectedKeys.size === filtered.length) {
+      setSelectedKeys(new Set());
+    } else {
+      setSelectedKeys(new Set(filtered.map((p) => p.key)));
+    }
+  };
+
+  const toggleOne = (key: string) => {
+    const next = new Set(selectedKeys);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    setSelectedKeys(next);
+  };
+
   return (
     <section className="overflow-hidden rounded-2xl border border-[#d6cfc0] bg-[#fbefdf] shadow-[0_14px_28px_rgba(32,40,25,0.06)]">
       <div className="border-b border-[#d6cfc0] bg-[#f2eadf] px-4 py-4 sm:px-5 sm:py-4">
@@ -110,10 +137,22 @@ export function AdminRegistrationsTable({
               {filtered.length} / {persons.length} personne{persons.length > 1 ? "s" : ""}
               <span className="ml-2 text-[12px] text-[#5e6353]">
                 · {registrations.length} inscription{registrations.length > 1 ? "s" : ""}
+                {selectedKeys.size > 0 && (
+                  <span className="ml-2 font-medium text-[#546b43]">
+                    ({selectedKeys.size} sélectionnée{selectedKeys.size > 1 ? "s" : ""})
+                  </span>
+                )}
               </span>
             </p>
           </div>
-          <AdminAddParticipant seminars={seminars} />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <AdminBulkEmailDrawer
+              registrationIds={filteredIds}
+              count={selectedKeys.size > 0 ? selectedKeys.size : filtered.length}
+              isSelectionActive={selectedKeys.size > 0}
+            />
+            <AdminAddParticipant seminars={seminars} />
+          </div>
         </div>
 
         <div className="mt-3 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
@@ -206,6 +245,14 @@ export function AdminRegistrationsTable({
         <table className="w-full text-left text-sm">
           <thead className="bg-[#f2eadf] text-[11px] uppercase tracking-[0.18em] text-[#5e6353]">
             <tr>
+              <th className="px-5 py-3 w-10">
+                <input
+                  type="checkbox"
+                  checked={filtered.length > 0 && selectedKeys.size === filtered.length}
+                  onChange={toggleAll}
+                  className="size-4 rounded border-[#cdc5b3] bg-[#fbefdf] text-[#546b43] focus:ring-[#546b43]/25"
+                />
+              </th>
               <th className="px-5 py-3">Nom</th>
               <th className="px-5 py-3">Email</th>
               <th className="px-5 py-3">Séminaire</th>
@@ -225,8 +272,19 @@ export function AdminRegistrationsTable({
                 <tr
                   key={p.key}
                   onClick={() => setSelected(p)}
-                  className="cursor-pointer border-t border-[#e6ddca] transition hover:bg-[#f7eedd]"
+                  className={cn(
+                    "cursor-pointer border-t border-[#e6ddca] transition hover:bg-[#f7eedd]",
+                    selectedKeys.has(p.key) && "bg-[#546b43]/5"
+                  )}
                 >
+                  <td className="px-5 py-3" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedKeys.has(p.key)}
+                      onChange={() => toggleOne(p.key)}
+                      className="size-4 rounded border-[#cdc5b3] bg-[#fbefdf] text-[#546b43] focus:ring-[#546b43]/25"
+                    />
+                  </td>
                   <td className="px-5 py-3 font-serif text-[#202819]">
                     <span className="flex items-center gap-2">
                       {multi && (
@@ -270,7 +328,7 @@ export function AdminRegistrationsTable({
             {filtered.length === 0 && (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={9}
                   className="px-5 py-10 text-center text-sm text-[#5e6353]"
                 >
                   Aucun inscrit.

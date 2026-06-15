@@ -5,18 +5,27 @@ import { resend } from "@/lib/email/resend";
 import { ReceivedEmail } from "@/lib/email/templates/ReceivedEmail";
 import { PaymentConfirmedEmail } from "@/lib/email/templates/PaymentConfirmedEmail";
 import { ReminderEmail } from "@/lib/email/templates/ReminderEmail";
+import { CourseLinkEmail } from "@/lib/email/templates/CourseLinkEmail";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 interface SendConfirmationEmailParams {
   registrationIds: string[];
   force?: boolean;
-  template?: "received" | "payment" | "reminder";
+  template?: "received" | "payment" | "reminder" | "course_link";
+  courseLink?: string;
+  telegramLink?: string;
+  subject?: string;
+  customContent?: string;
 }
 
 export async function sendConfirmationEmail({
   registrationIds,
   force = false,
   template = "received",
+  courseLink,
+  telegramLink,
+  subject: customSubject,
+  customContent,
 }: SendConfirmationEmailParams) {
   try {
     console.log("--- Email Action Debug ---");
@@ -111,22 +120,33 @@ export async function sendConfirmationEmail({
                 seminars: lines,
                 paymentMethod: firstReg.payment_method || "Non spécifié",
               })
-            : ReceivedEmail({
-                firstName: firstReg.first_name,
-                lastName: firstReg.last_name,
-                seminars: lines,
-                paymentMethod: firstReg.payment_method || "Non spécifié",
-              })
+            : template === "course_link"
+              ? CourseLinkEmail({
+                  firstName: firstReg.first_name,
+                  seminars: lines,
+                  courseLink: courseLink || "",
+                  telegramLink: telegramLink,
+                  customContent: customContent,
+                })
+              : ReceivedEmail({
+                  firstName: firstReg.first_name,
+                  lastName: firstReg.last_name,
+                  seminars: lines,
+                  paymentMethod: firstReg.payment_method || "Non spécifié",
+                })
       );
 
       const subject =
-        template === "payment"
+        customSubject ||
+        (template === "payment"
           ? "Confirmation de paiement — inscription confirmée"
           : template === "reminder"
             ? "Rappel — paiement en attente pour votre inscription"
-            : lines.length > 1
-              ? "Confirmation de vos inscriptions"
-              : "Confirmation de votre inscription";
+            : template === "course_link"
+              ? `Lien du premier cours — ${lines[0].title}${lines.length > 1 ? " (et plus)" : ""}`
+              : lines.length > 1
+                ? "Confirmation de vos inscriptions"
+                : "Confirmation de votre inscription");
 
       try {
         const { data, error: sendError } = await resend.emails.send({
@@ -148,7 +168,7 @@ export async function sendConfirmationEmail({
 
         console.log(`[Email] Resend success for ${email}. ID: ${data.id}`);
 
-        if (template === "payment" || template === "reminder") {
+        if (template === "payment" || template === "reminder" || template === "course_link") {
           results.push({ email, status: "success", messageId: data.id });
           continue;
         }
