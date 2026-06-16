@@ -5,6 +5,7 @@ export const paymentStatuses = [
   "pending",
   "paid",
   "installments",
+  "pay_later",
   "offert",
   "cancelled",
 ] as const;
@@ -14,6 +15,7 @@ export const paymentStatusLabels: Record<PaymentStatus, string> = {
   pending: "En attente",
   paid: "Payé",
   installments: "Plusieurs fois",
+  pay_later: "Payé plus tard",
   offert: "Offert",
   cancelled: "Annulé",
 };

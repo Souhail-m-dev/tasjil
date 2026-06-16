@@ -9,6 +9,7 @@ const STATUS_OPTIONS = [
   { value: "pending", label: "En attente" },
   { value: "paid", label: "Payé" },
   { value: "installments", label: "Plusieurs fois" },
+  { value: "pay_later", label: "Payé plus tard" },
   { value: "offert", label: "Offert" },
   { value: "cancelled", label: "Annulé" },
 ] as const;
@@ -55,9 +56,11 @@ export function RegistrationStatusSelect({
         ? "#a8321b"
         : status === "installments"
           ? "#c98a27"
-          : status === "offert"
-            ? "#8a6db5"
-            : "#e3cc9e";
+          : status === "pay_later"
+            ? "#4a7a8c"
+            : status === "offert"
+              ? "#8a6db5"
+              : "#e3cc9e";
   const fg = status === "pending" ? "#3c4130" : "#fbefdf";
 
   return (

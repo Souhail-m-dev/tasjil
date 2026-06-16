@@ -236,6 +236,7 @@ function StatusBadge({ status }: { status: PaymentStatus }) {
     paid: "border-[#546b43] bg-[#e4d4b7] text-[#3f5333]",
     pending: "border-[#cdc5b3] bg-[#f2eadf] text-[#5e6353]",
     installments: "border-[#c98a27] bg-[#f4e3c4] text-[#7a5616]",
+    pay_later: "border-[#4a7a8c] bg-[#d9eaf0] text-[#2f5360]",
     offert: "border-[#8a6db5] bg-[#e7def0] text-[#54407a]",
     cancelled: "border-[#c8a99a] bg-[#f2dcd2] text-[#7a3a2a]",
   };
