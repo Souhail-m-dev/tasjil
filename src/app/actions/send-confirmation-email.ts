@@ -6,12 +6,18 @@ import { ReceivedEmail } from "@/lib/email/templates/ReceivedEmail";
 import { PaymentConfirmedEmail } from "@/lib/email/templates/PaymentConfirmedEmail";
 import { ReminderEmail } from "@/lib/email/templates/ReminderEmail";
 import { CourseLinkEmail } from "@/lib/email/templates/CourseLinkEmail";
+import { TelegramLinkEmail } from "@/lib/email/templates/TelegramLinkEmail";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+
+const TELEGRAM_LINKS = {
+  homme: "https://t.me/+X5hJusj5xLQxZjE0",
+  femme: "https://t.me/+GsC_jwXmBtozMTk0",
+};
 
 interface SendConfirmationEmailParams {
   registrationIds: string[];
   force?: boolean;
-  template?: "received" | "payment" | "reminder" | "course_link";
+  template?: "received" | "payment" | "reminder" | "course_link" | "telegram_link";
   courseLink?: string;
   telegramLink?: string;
   subject?: string;
@@ -128,6 +134,12 @@ export async function sendConfirmationEmail({
                   telegramLink: telegramLink,
                   customContent: customContent,
                 })
+            : template === "telegram_link"
+              ? TelegramLinkEmail({
+                  firstName: firstReg.first_name,
+                  seminars: lines,
+                  telegramLink: (firstReg.gender === "femme" ? TELEGRAM_LINKS.femme : TELEGRAM_LINKS.homme),
+                })
               : ReceivedEmail({
                   firstName: firstReg.first_name,
                   lastName: firstReg.last_name,
@@ -144,9 +156,11 @@ export async function sendConfirmationEmail({
             ? "Rappel — paiement en attente pour votre inscription"
             : template === "course_link"
               ? `Lien du premier cours — ${lines[0].title}${lines.length > 1 ? " (et plus)" : ""}`
-              : lines.length > 1
-                ? "Confirmation de vos inscriptions"
-                : "Confirmation de votre inscription");
+              : template === "telegram_link"
+                ? "Rejoignez votre groupe Telegram dédié"
+                : lines.length > 1
+                  ? "Confirmation de vos inscriptions"
+                  : "Confirmation de votre inscription");
 
       try {
         const { data, error: sendError } = await resend.emails.send({

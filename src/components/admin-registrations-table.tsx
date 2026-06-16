@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Search, NotebookPen, Layers } from "lucide-react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { Search, NotebookPen, Layers, Send, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AdminRegistrationDrawer } from "@/components/admin-registration-drawer";
 import { AdminAddParticipant } from "@/components/admin-add-participant";
 import { AdminBulkEmailDrawer } from "@/components/admin-bulk-email-drawer";
 import { RegistrationStatusSelect } from "@/components/registration-status-select";
+import { sendConfirmationEmail } from "@/app/actions/send-confirmation-email";
 import {
   paymentStatuses,
   paymentStatusLabels,
@@ -71,6 +73,7 @@ export function AdminRegistrationsTable({
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [selected, setSelected] = useState<Person | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [isSendingTelegram, startSendingTelegram] = useTransition();
 
   const persons = useMemo(() => groupByPerson(registrations), [registrations]);
 
@@ -110,6 +113,30 @@ export function AdminRegistrationsTable({
     [filtered, selectedKeys],
   );
 
+  const handleSendTelegramLinks = () => {
+    if (filteredIds.length === 0) return;
+
+    const targetCount = selectedKeys.size > 0 ? selectedKeys.size : filtered.length;
+    const confirmMsg = `Envoyer le lien Telegram à ${targetCount} personne${targetCount > 1 ? "s" : ""} ? (Le lien sera choisi automatiquement selon le genre)`;
+    
+    if (!window.confirm(confirmMsg)) return;
+
+    startSendingTelegram(async () => {
+      const res = await sendConfirmationEmail({
+        registrationIds: filteredIds,
+        template: "telegram_link",
+        force: true,
+      });
+
+      if (res.success) {
+        toast.success(`Lien Telegram envoyé à ${res.results?.length ?? 0} personnes.`);
+        setSelectedKeys(new Set());
+      } else {
+        toast.error(res.error || "Échec de l'envoi.");
+      }
+    });
+  };
+
   const toggleAll = () => {
     if (selectedKeys.size === filtered.length) {
       setSelectedKeys(new Set());
@@ -146,6 +173,19 @@ export function AdminRegistrationsTable({
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <button
+              type="button"
+              onClick={handleSendTelegramLinks}
+              disabled={isSendingTelegram || (selectedKeys.size === 0 && filtered.length === 0)}
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-[#cdc5b3] bg-[#fbefdf] px-4 text-sm font-medium text-[#3c4130] transition hover:border-[#0088cc] hover:text-[#0088cc] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0088cc]/40 disabled:opacity-50 sm:w-auto"
+            >
+              {isSendingTelegram ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Send className="size-4" />
+              )}
+              Lien Telegram
+            </button>
             <AdminBulkEmailDrawer
               registrationIds={filteredIds}
               count={selectedKeys.size > 0 ? selectedKeys.size : filtered.length}

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { BellRing, Loader2, Mail, Save, Trash2, X } from "lucide-react";
+import { BellRing, Loader2, Mail, Save, Trash2, X, Send } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { sendConfirmationEmail } from "@/app/actions/send-confirmation-email";
 import { formatDate } from "@/lib/format";
@@ -43,6 +43,7 @@ export function AdminRegistrationDrawer({
   const [isSendingEmail, startSendingEmail] = useTransition();
   const [isSendingPayment, startSendingPayment] = useTransition();
   const [isSendingReminder, startSendingReminder] = useTransition();
+  const [isSendingTelegram, startSendingTelegram] = useTransition();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const regs = registrations ?? [];
@@ -196,6 +197,22 @@ export function AdminRegistrationDrawer({
     });
   };
 
+  const onSendTelegramEmail = () => {
+    if (!primary) return;
+    startSendingTelegram(async () => {
+      const { success } = await sendConfirmationEmail({
+        registrationIds: ids,
+        force: true,
+        template: "telegram_link",
+      });
+      if (success) {
+        toast.success("Email lien Telegram envoyé");
+      } else {
+        toast.error("Échec de l'envoi.");
+      }
+    });
+  };
+
   const overlay = (
     <div
       role="dialog"
@@ -271,7 +288,7 @@ export function AdminRegistrationDrawer({
                 <button
                   type="button"
                   onClick={onSendEmail}
-                  disabled={isSendingEmail || isSendingPayment || isSendingReminder || isSaving || isDeleting}
+                  disabled={isSendingEmail || isSendingPayment || isSendingReminder || isSendingTelegram || isSaving || isDeleting}
                   className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#cdc5b3] bg-[#fbefdf] px-4 text-sm font-medium text-[#3c4130] transition hover:border-[#546b43] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40 disabled:opacity-50 sm:w-auto"
                 >
                   {isSendingEmail ? (
@@ -283,8 +300,21 @@ export function AdminRegistrationDrawer({
                 </button>
                 <button
                   type="button"
+                  onClick={onSendTelegramEmail}
+                  disabled={isSendingTelegram || isSendingPayment || isSendingEmail || isSendingReminder || isSaving || isDeleting}
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#0088cc]/40 bg-[#e6f3fb] px-4 text-sm font-medium text-[#006699] transition hover:border-[#0088cc] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0088cc]/40 disabled:opacity-50 sm:w-auto"
+                >
+                  {isSendingTelegram ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Send className="size-4" />
+                  )}
+                  Email lien Telegram
+                </button>
+                <button
+                  type="button"
                   onClick={onSendPaymentEmail}
-                  disabled={isSendingPayment || isSendingEmail || isSendingReminder || isSaving || isDeleting}
+                  disabled={isSendingPayment || isSendingEmail || isSendingReminder || isSendingTelegram || isSaving || isDeleting}
                   className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#546b43]/40 bg-[#eef0e6] px-4 text-sm font-medium text-[#3f5333] transition hover:border-[#546b43] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#546b43]/40 disabled:opacity-50 sm:w-auto"
                 >
                   {isSendingPayment ? (
@@ -298,7 +328,7 @@ export function AdminRegistrationDrawer({
                   <button
                     type="button"
                     onClick={onSendReminderEmail}
-                    disabled={isSendingReminder || isSendingPayment || isSendingEmail || isSaving || isDeleting}
+                    disabled={isSendingReminder || isSendingPayment || isSendingEmail || isSendingTelegram || isSaving || isDeleting}
                     className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#c97a16]/50 bg-[#fbe9d3] px-4 text-sm font-medium text-[#7a4a0d] transition hover:border-[#c97a16] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c97a16]/40 disabled:opacity-50 sm:w-auto"
                   >
                     {isSendingReminder ? (
