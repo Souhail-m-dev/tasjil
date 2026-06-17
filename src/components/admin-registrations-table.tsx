@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
-import { Search, NotebookPen, Layers, Send, Loader2 } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import { Search, NotebookPen, Layers, Send, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AdminRegistrationDrawer } from "@/components/admin-registration-drawer";
@@ -71,9 +71,11 @@ export function AdminRegistrationsTable({
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [seminarFilter, setSeminarFilter] = useState<string | "all">("all");
   const [selected, setSelected] = useState<Person | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [isSendingTelegram, startSendingTelegram] = useTransition();
+  const [isSendingCorrection, startSendingCorrection] = useTransition();
 
   const persons = useMemo(() => groupByPerson(registrations), [registrations]);
 
@@ -83,6 +85,11 @@ export function AdminRegistrationsTable({
       if (
         statusFilter !== "all" &&
         !p.regs.some((r) => (r.payment_status ?? "pending") === statusFilter)
+      )
+        return false;
+      if (
+        seminarFilter !== "all" &&
+        !p.regs.some((r) => r.seminar_id === seminarFilter)
       )
         return false;
       if (!q) return true;
@@ -101,16 +108,37 @@ export function AdminRegistrationsTable({
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [persons, query, statusFilter]);
+  }, [persons, query, statusFilter, seminarFilter]);
 
   const filteredIds = useMemo(
     () => {
-      const activePersons = selectedKeys.size > 0 
+      const activePersons = selectedKeys.size > 0
         ? filtered.filter(p => selectedKeys.has(p.key))
         : filtered;
-      return activePersons.flatMap((p) => p.regs.map((r) => r.id));
+      return activePersons.flatMap((p) =>
+        p.regs
+          .filter((r) => seminarFilter === "all" || r.seminar_id === seminarFilter)
+          .map((r) => r.id),
+      );
     },
-    [filtered, selectedKeys],
+    [filtered, selectedKeys, seminarFilter],
+  );
+
+  // Correction Telegram : uniquement les personnes inscrites EXCLUSIVEMENT au
+  // séminaire sélectionné (exclut les inscrits aux deux séminaires).
+  const correctionPersons = useMemo(() => {
+    if (seminarFilter === "all") return [];
+    const activePersons = selectedKeys.size > 0
+      ? filtered.filter((p) => selectedKeys.has(p.key))
+      : filtered;
+    return activePersons.filter((p) =>
+      p.regs.every((r) => r.seminar_id === seminarFilter),
+    );
+  }, [filtered, selectedKeys, seminarFilter]);
+
+  const correctionIds = useMemo(
+    () => correctionPersons.flatMap((p) => p.regs.map((r) => r.id)),
+    [correctionPersons],
   );
 
   const handleSendTelegramLinks = () => {
@@ -129,7 +157,37 @@ export function AdminRegistrationsTable({
       });
 
       if (res.success) {
-        toast.success(`Lien Telegram envoyé à ${res.results?.length ?? 0} personnes.`);
+        const sent = res.results?.filter((r) => r.status === "success").length ?? 0;
+        const skipped = (res.results?.length ?? 0) - sent;
+        toast.success(
+          `Lien Telegram envoyé à ${sent} personne${sent > 1 ? "s" : ""}.` +
+            (skipped > 0 ? ` ${skipped} ignorée${skipped > 1 ? "s" : ""} (pas de lien pour ce séminaire).` : ""),
+        );
+        setSelectedKeys(new Set());
+      } else {
+        toast.error(res.error || "Échec de l'envoi.");
+      }
+    });
+  };
+
+  const handleSendCorrection = () => {
+    if (correctionIds.length === 0) return;
+
+    const targetCount = correctionPersons.length;
+    const confirmMsg = `Envoyer le mail de correction Telegram à ${targetCount} personne${targetCount > 1 ? "s" : ""} inscrite${targetCount > 1 ? "s" : ""} uniquement à ce séminaire ? (leur demander de ne pas rejoindre l'ancien lien)`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    startSendingCorrection(async () => {
+      const res = await sendConfirmationEmail({
+        registrationIds: correctionIds,
+        template: "telegram_correction",
+        force: true,
+      });
+
+      if (res.success) {
+        const sent = res.results?.filter((r) => r.status === "success").length ?? 0;
+        toast.success(`Mail de correction envoyé à ${sent} personne${sent > 1 ? "s" : ""}.`);
         setSelectedKeys(new Set());
       } else {
         toast.error(res.error || "Échec de l'envoi.");
@@ -186,6 +244,20 @@ export function AdminRegistrationsTable({
               )}
               Lien Telegram
             </button>
+            <button
+              type="button"
+              onClick={handleSendCorrection}
+              disabled={isSendingCorrection || correctionIds.length === 0}
+              title={seminarFilter === "all" ? "Sélectionne d'abord un séminaire pour cibler le bon groupe" : correctionIds.length === 0 ? "Aucune personne inscrite uniquement à ce séminaire" : undefined}
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-[#cdc5b3] bg-[#fbefdf] px-4 text-sm font-medium text-[#3c4130] transition hover:border-[#a8321b] hover:text-[#a8321b] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#a8321b]/40 disabled:opacity-50 sm:w-auto"
+            >
+              {isSendingCorrection ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <AlertTriangle className="size-4" />
+              )}
+              Correction Telegram
+            </button>
             <AdminBulkEmailDrawer
               registrationIds={filteredIds}
               count={selectedKeys.size > 0 ? selectedKeys.size : filtered.length}
@@ -225,6 +297,26 @@ export function AdminRegistrationsTable({
             ))}
           </div>
         </div>
+
+        {seminars.length > 1 && (
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
+            <FilterChip
+              active={seminarFilter === "all"}
+              onClick={() => setSeminarFilter("all")}
+            >
+              Tous séminaires
+            </FilterChip>
+            {seminars.map((s) => (
+              <FilterChip
+                key={s.id}
+                active={seminarFilter === s.id}
+                onClick={() => setSeminarFilter(s.id)}
+              >
+                <span className="block max-w-[14rem] truncate">{s.title}</span>
+              </FilterChip>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Mobile cards */}
