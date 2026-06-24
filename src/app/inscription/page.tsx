@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getTenant } from "@/lib/tenants";
 import { RegistrationForm } from "@/components/registration-form";
 
 export const metadata = {
@@ -11,10 +12,12 @@ export default async function InscriptionPage({
   searchParams: Promise<{ seminar?: string }>;
 }) {
   const { seminar: slug } = await searchParams;
+  const { slug: tenant } = await getTenant();
   const supabase = await createClient();
   const { data: seminars, error } = await supabase
     .from("seminars")
     .select("*")
+    .eq("tenant", tenant)
     .order("start_date", { ascending: true });
 
   if (error) {

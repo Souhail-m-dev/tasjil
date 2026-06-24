@@ -1,6 +1,7 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getTenant } from "@/lib/tenants";
 import { sendConfirmationEmail } from "@/app/actions/send-confirmation-email";
 import {
   BOTH_SEMINARS_OPTION_ID,
@@ -24,6 +25,7 @@ export async function submitRegistration(
     return { ok: false, error: "Configuration serveur manquante." };
   }
 
+  const { slug: tenant } = await getTenant();
   const data = parsed.data;
   const payload = normalizeRegistration(data);
   const isBundle = data.seminar_id === BOTH_SEMINARS_OPTION_ID;
@@ -31,6 +33,7 @@ export async function submitRegistration(
   let inserts: (typeof payload & {
     seminar_id: string;
     payment_status: string;
+    tenant: string;
     notes?: string;
   })[];
 
@@ -38,6 +41,7 @@ export async function submitRegistration(
     const { data: seminars, error: seminarsError } = await supabaseAdmin
       .from("seminars")
       .select("id, slug, start_date")
+      .eq("tenant", tenant)
       .order("start_date", { ascending: true });
     if (seminarsError || !seminars || seminars.length === 0) {
       console.error("[submitRegistration] seminars fetch", seminarsError);
@@ -47,10 +51,20 @@ export async function submitRegistration(
       ...payload,
       seminar_id: s.id,
       payment_status: "pending",
+      tenant,
       notes: "Inscription pack 2 séminaires - tarif 250€.",
     }));
   } else {
-    inserts = [{ ...payload, payment_status: "pending" }];
+    const { data: seminar, error: seminarError } = await supabaseAdmin
+      .from("seminars")
+      .select("id")
+      .eq("id", data.seminar_id)
+      .eq("tenant", tenant)
+      .single();
+    if (seminarError || !seminar) {
+      return { ok: false, error: "Séminaire introuvable." };
+    }
+    inserts = [{ ...payload, payment_status: "pending", tenant }];
   }
 
   const { data: rows, error: insertError } = await supabaseAdmin
