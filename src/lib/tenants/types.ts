@@ -1,0 +1,53 @@
+export type TenantTheme = {
+  emerald: string;
+  emeraldDeep: string;
+  gold: string;
+  goldSoft: string;
+  paper: string;
+  paperCream: string;
+  paperDeep: string;
+  lineSoft: string;
+  inkFade: string;
+};
+
+export type TenantConfig = {
+  slug: string;
+  hosts: string[];
+  brand: {
+    name: string;
+    shortName: string;
+    logoSrc: string;
+  };
+  prof: {
+    name: string;
+    role: string;
+    credentials: string[];
+    bioParas: string[];
+    telegram: string | null;
+    youtube: string | null;
+    tazkiyaUrl: string | null;
+  };
+  email: {
+    from: string;
+    replyTo: string;
+    fromName: string;
+  };
+  terminology: {
+    /** singular unit of study, e.g. "séminaire" | "niveau" */
+    unit: string;
+    /** overarching cycle, e.g. "session" | "année" */
+    cycle: string;
+  };
+  schedule: string;
+  theme: TenantTheme;
+  features: {
+    bundle: boolean;
+    zoom: boolean;
+    presentiel: boolean;
+    certificate: boolean;
+  };
+  metadata: {
+    title: string;
+    description: string;
+  };
+};
