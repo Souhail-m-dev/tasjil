@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getTenant } from "@/lib/tenants";
 import { formatDate, formatPrice } from "@/lib/format";
 
 export const metadata = {
@@ -7,9 +8,11 @@ export const metadata = {
 
 export default async function AdminSeminairesPage() {
   const supabase = await createClient();
+  const { slug: tenant } = await getTenant();
   const { data: seminars } = await supabase
     .from("seminars")
     .select("*")
+    .eq("tenant", tenant)
     .order("start_date", { ascending: true });
 
   const rows = seminars ?? [];

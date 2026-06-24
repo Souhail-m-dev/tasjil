@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, NotebookPen } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getTenant } from "@/lib/tenants";
 import { formatPrice } from "@/lib/format";
 import {
   paymentStatusLabels,
@@ -15,13 +16,18 @@ const RECENT_LIMIT = 5;
 
 export default async function AdminOverviewPage() {
   const supabase = await createClient();
+  const { slug: tenant } = await getTenant();
 
   const [{ data: registrations }, { data: seminars }] = await Promise.all([
     supabase
       .from("registrations")
       .select("*, seminars(title)")
       .order("created_at", { ascending: false }),
-    supabase.from("seminars").select("*").order("start_date", { ascending: true }),
+    supabase
+      .from("seminars")
+      .select("*")
+      .eq("tenant", tenant)
+      .order("start_date", { ascending: true }),
   ]);
 
   const totalRegistrations = registrations?.length ?? 0;

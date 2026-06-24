@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getTenant } from "@/lib/tenants";
 import { AdminRegistrationsTable } from "@/components/admin-registrations-table";
 
 export const metadata = {
@@ -7,13 +8,18 @@ export const metadata = {
 
 export default async function AdminInscriptionsPage() {
   const supabase = await createClient();
+  const { slug: tenant } = await getTenant();
 
   const [{ data: registrations }, { data: seminars }] = await Promise.all([
     supabase
       .from("registrations")
       .select("*, seminars(*)")
       .order("created_at", { ascending: false }),
-    supabase.from("seminars").select("*").order("start_date", { ascending: true }),
+    supabase
+      .from("seminars")
+      .select("*")
+      .eq("tenant", tenant)
+      .order("start_date", { ascending: true }),
   ]);
 
   return (
@@ -33,6 +39,7 @@ export default async function AdminInscriptionsPage() {
       <AdminRegistrationsTable
         registrations={registrations ?? []}
         seminars={seminars ?? []}
+        tenant={tenant}
       />
     </div>
   );

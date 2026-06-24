@@ -65,9 +65,11 @@ function seminarSummary(regs: Registration[]): string {
 export function AdminRegistrationsTable({
   registrations,
   seminars,
+  tenant,
 }: {
   registrations: Registration[];
   seminars: Seminar[];
+  tenant: string;
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -263,7 +265,7 @@ export function AdminRegistrationsTable({
               count={selectedKeys.size > 0 ? selectedKeys.size : filtered.length}
               isSelectionActive={selectedKeys.size > 0}
             />
-            <AdminAddParticipant seminars={seminars} />
+            <AdminAddParticipant seminars={seminars} tenant={tenant} />
           </div>
         </div>
 

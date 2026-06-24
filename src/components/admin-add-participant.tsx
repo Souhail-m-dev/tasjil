@@ -18,7 +18,13 @@ import type { Database } from "@/lib/types/db";
 
 type Seminar = Database["public"]["Tables"]["seminars"]["Row"];
 
-export function AdminAddParticipant({ seminars }: { seminars: Seminar[] }) {
+export function AdminAddParticipant({
+  seminars,
+  tenant,
+}: {
+  seminars: Seminar[];
+  tenant: string;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -64,7 +70,9 @@ export function AdminAddParticipant({ seminars }: { seminars: Seminar[] }) {
     startSaving(async () => {
       const supabase = createClient();
       const payload = normalizeAdminPayload(data);
-      const { error } = await supabase.from("registrations").insert(payload);
+      const { error } = await supabase
+        .from("registrations")
+        .insert({ ...payload, tenant });
       if (error) {
         toast.error("Échec de l'ajout.");
         return;
