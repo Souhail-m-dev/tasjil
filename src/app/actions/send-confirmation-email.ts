@@ -9,6 +9,7 @@ import { CourseLinkEmail } from "@/lib/email/templates/CourseLinkEmail";
 import { TelegramLinkEmail } from "@/lib/email/templates/TelegramLinkEmail";
 import { TelegramCorrectionEmail } from "@/lib/email/templates/TelegramCorrectionEmail";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { tenantBySlug } from "@/lib/tenants";
 
 // Liens Telegram par séminaire (id) puis par genre.
 // Seul Hisn al-Muslim a ses groupes. Le séminaire "Beaux noms d'Allah" suivra.
@@ -53,14 +54,6 @@ export async function sendConfirmationEmail({
       return { success: false, error: "Email configuration error" };
     }
 
-    const fromEmail = process.env.EMAIL_FROM;
-    const fromName = process.env.EMAIL_FROM_NAME || "Tasjîl";
-    const replyTo = process.env.EMAIL_REPLY_TO;
-    if (!fromEmail) {
-      console.error("[Email] EMAIL_FROM env missing");
-      return { success: false, error: "Email sender not configured" };
-    }
-
     console.log(`[Email] Sending for ${registrationIds.length} registrations`);
 
     const { data: registrations, error: fetchError } = await supabaseAdmin
@@ -94,6 +87,10 @@ export async function sendConfirmationEmail({
 
     for (const [email, userRegs] of Object.entries(groupedByEmail)) {
       const firstReg = userRegs[0];
+      const { email: sender } = tenantBySlug(firstReg.tenant);
+      const fromEmail = sender.from;
+      const fromName = sender.fromName;
+      const replyTo = sender.replyTo;
 
       const now = new Date();
       const needsSending = force || userRegs.some(reg => {
