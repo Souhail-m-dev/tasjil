@@ -8,6 +8,8 @@ import {
   Amiri,
 } from "next/font/google";
 import { Toaster } from "sonner";
+import { getTenant } from "@/lib/tenants";
+import type { TenantTheme } from "@/lib/tenants";
 import "./globals.css";
 
 const inter = Inter({
@@ -48,18 +50,33 @@ const amiri = Amiri({
   weight: ["400", "700"],
 });
 
-export const metadata: Metadata = {
-  title: "Séminaires en ligne — Inscription",
-  description:
-    "Inscrivez-vous aux séminaires : Explication de Hisn al-Muslim et Résumé des beaux noms d'Allah.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { metadata } = await getTenant();
+  return { title: metadata.title, description: metadata.description };
+}
 
-export default function RootLayout({
+function themeVars(theme: TenantTheme): React.CSSProperties {
+  return {
+    "--emerald": theme.emerald,
+    "--emerald-deep": theme.emeraldDeep,
+    "--gold": theme.gold,
+    "--gold-soft": theme.goldSoft,
+    "--paper": theme.paper,
+    "--paper-cream": theme.paperCream,
+    "--paper-deep": theme.paperDeep,
+    "--line-soft": theme.lineSoft,
+    "--ink-fade": theme.inkFade,
+  } as React.CSSProperties;
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const tenant = await getTenant();
   return (
     <html
       lang="fr"
+      style={themeVars(tenant.theme)}
       className={`${inter.variable} ${bodoni.variable} ${baskerville.variable} ${cormorant.variable} ${allura.variable} ${amiri.variable} h-full antialiased`}
     >
       <head>
