@@ -1,22 +1,17 @@
 import { Resend } from "resend";
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-
 declare global {
-  var resendClient: Resend | undefined;
+  var resendClients: Map<string, Resend> | undefined;
 }
 
-const getResend = () => {
-  if (!RESEND_API_KEY) {
-    console.error("[Resend] RESEND_API_KEY missing");
-    return null;
-  }
-  if (global.resendClient) return global.resendClient;
-  const client = new Resend(RESEND_API_KEY);
-  if (process.env.NODE_ENV !== "production") {
-    global.resendClient = client;
+const clients = global.resendClients ?? new Map<string, Resend>();
+if (process.env.NODE_ENV !== "production") global.resendClients = clients;
+
+export function resendForKey(key: string): Resend {
+  let client = clients.get(key);
+  if (!client) {
+    client = new Resend(key);
+    clients.set(key, client);
   }
   return client;
-};
-
-export const resend = getResend();
+}

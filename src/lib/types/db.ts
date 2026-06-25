@@ -18,18 +18,48 @@ export type Database = {
           email: string
           id: string
           role: string | null
+          tenant: string
         }
         Insert: {
           created_at?: string | null
           email: string
           id?: string
           role?: string | null
+          tenant?: string
         }
         Update: {
           created_at?: string | null
           email?: string
           id?: string
           role?: string | null
+          tenant?: string
+        }
+        Relationships: []
+      }
+      tenants: {
+        Row: {
+          created_at: string
+          email_from: string
+          email_from_name: string
+          email_reply_to: string | null
+          resend_api_key: string | null
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          email_from: string
+          email_from_name: string
+          email_reply_to?: string | null
+          resend_api_key?: string | null
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          email_from?: string
+          email_from_name?: string
+          email_reply_to?: string | null
+          resend_api_key?: string | null
+          slug?: string
         }
         Relationships: []
       }
@@ -57,6 +87,7 @@ export type Database = {
           signature_text: string | null
           signed_at: string | null
           telegram_handle: string | null
+          tenant: string
           zoom_email: string | null
         }
         Insert: {
@@ -82,6 +113,7 @@ export type Database = {
           signature_text?: string | null
           signed_at?: string | null
           telegram_handle?: string | null
+          tenant?: string
           zoom_email?: string | null
         }
         Update: {
@@ -107,6 +139,7 @@ export type Database = {
           signature_text?: string | null
           signed_at?: string | null
           telegram_handle?: string | null
+          tenant?: string
           zoom_email?: string | null
         }
         Relationships: [
@@ -135,6 +168,7 @@ export type Database = {
           sessions_per_week: number | null
           slug: string
           start_date: string | null
+          tenant: string
           title: string
           title_ar: string | null
           zoom: boolean | null
@@ -154,6 +188,7 @@ export type Database = {
           sessions_per_week?: number | null
           slug: string
           start_date?: string | null
+          tenant?: string
           title: string
           title_ar?: string | null
           zoom?: boolean | null
@@ -173,6 +208,7 @@ export type Database = {
           sessions_per_week?: number | null
           slug?: string
           start_date?: string | null
+          tenant?: string
           title?: string
           title_ar?: string | null
           zoom?: boolean | null

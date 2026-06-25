@@ -1,22 +1,42 @@
 "use server";
 
 import { render } from "@react-email/render";
-import { resend } from "@/lib/email/resend";
+import { resendForKey } from "@/lib/email/resend";
 import { ReceivedEmail } from "@/lib/email/templates/ReceivedEmail";
 import { PaymentConfirmedEmail } from "@/lib/email/templates/PaymentConfirmedEmail";
 import { ReminderEmail } from "@/lib/email/templates/ReminderEmail";
+import { CourseLinkEmail } from "@/lib/email/templates/CourseLinkEmail";
+import { TelegramLinkEmail } from "@/lib/email/templates/TelegramLinkEmail";
+import { TelegramCorrectionEmail } from "@/lib/email/templates/TelegramCorrectionEmail";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+
+// Liens Telegram par séminaire (id) puis par genre.
+// Seul Hisn al-Muslim a ses groupes. Le séminaire "Beaux noms d'Allah" suivra.
+const SEMINAR_TELEGRAM_LINKS: Record<string, { homme: string; femme: string }> = {
+  "deffdbdd-4962-4cac-86cc-b622d96c5693": {
+    homme: "https://t.me/+X5hJusj5xLQxZjE0",
+    femme: "https://t.me/+GsC_jwXmBtozMTk0",
+  },
+};
 
 interface SendConfirmationEmailParams {
   registrationIds: string[];
   force?: boolean;
-  template?: "received" | "payment" | "reminder";
+  template?: "received" | "payment" | "reminder" | "course_link" | "telegram_link" | "telegram_correction";
+  courseLink?: string;
+  telegramLink?: string;
+  subject?: string;
+  customContent?: string;
 }
 
 export async function sendConfirmationEmail({
   registrationIds,
   force = false,
   template = "received",
+  courseLink,
+  telegramLink,
+  subject: customSubject,
+  customContent,
 }: SendConfirmationEmailParams) {
   try {
     console.log("--- Email Action Debug ---");
@@ -27,18 +47,6 @@ export async function sendConfirmationEmail({
     if (!supabaseAdmin) {
       console.error("[Email] supabaseAdmin not initialized");
       return { success: false, error: "Database configuration error" };
-    }
-    if (!resend) {
-      console.error("[Email] resend client not initialized");
-      return { success: false, error: "Email configuration error" };
-    }
-
-    const fromEmail = process.env.EMAIL_FROM;
-    const fromName = process.env.EMAIL_FROM_NAME || "Tasjîl";
-    const replyTo = process.env.EMAIL_REPLY_TO;
-    if (!fromEmail) {
-      console.error("[Email] EMAIL_FROM env missing");
-      return { success: false, error: "Email sender not configured" };
     }
 
     console.log(`[Email] Sending for ${registrationIds.length} registrations`);
@@ -74,6 +82,22 @@ export async function sendConfirmationEmail({
 
     for (const [email, userRegs] of Object.entries(groupedByEmail)) {
       const firstReg = userRegs[0];
+      const { data: tenantRow } = await supabaseAdmin
+        .from("tenants")
+        .select("resend_api_key, email_from, email_reply_to, email_from_name")
+        .eq("slug", firstReg.tenant)
+        .single();
+
+      const resendKey = tenantRow?.resend_api_key ?? process.env.RESEND_API_KEY;
+      if (!tenantRow || !resendKey) {
+        results.push({ email, status: "failed", error: `Email config missing for tenant '${firstReg.tenant}'` });
+        continue;
+      }
+
+      const resend = resendForKey(resendKey);
+      const fromEmail = tenantRow.email_from;
+      const fromName = tenantRow.email_from_name;
+      const replyTo = tenantRow.email_reply_to;
 
       const now = new Date();
       const needsSending = force || userRegs.some(reg => {
@@ -96,6 +120,17 @@ export async function sendConfirmationEmail({
         .filter(Boolean) as { title: string; price: number | null }[];
       const lines = seminarLines.length > 0 ? seminarLines : [{ title: "Séminaire", price: null }];
 
+      let resolvedTelegramLink: string | null = null;
+      if (template === "telegram_link") {
+        const links = SEMINAR_TELEGRAM_LINKS[firstReg.seminar_id ?? ""];
+        if (!links) {
+          console.log(`[Email] Skipping ${email} (no Telegram link for seminar ${firstReg.seminar_id})`);
+          results.push({ email, status: "skipped", reason: "No Telegram link for this seminar" });
+          continue;
+        }
+        resolvedTelegramLink = firstReg.gender === "femme" ? links.femme : links.homme;
+      }
+
       console.log(`[Email] Rendering ${template} template for ${email} with ${lines.length} seminars`);
       const emailHtml = await render(
         template === "payment"
@@ -111,22 +146,48 @@ export async function sendConfirmationEmail({
                 seminars: lines,
                 paymentMethod: firstReg.payment_method || "Non spécifié",
               })
-            : ReceivedEmail({
-                firstName: firstReg.first_name,
-                lastName: firstReg.last_name,
-                seminars: lines,
-                paymentMethod: firstReg.payment_method || "Non spécifié",
-              })
+            : template === "course_link"
+              ? CourseLinkEmail({
+                  firstName: firstReg.first_name,
+                  seminars: lines,
+                  courseLink: courseLink || "",
+                  telegramLink: telegramLink,
+                  customContent: customContent,
+                })
+            : template === "telegram_link"
+              ? TelegramLinkEmail({
+                  firstName: firstReg.first_name,
+                  seminars: lines,
+                  telegramLink: resolvedTelegramLink as string,
+                })
+            : template === "telegram_correction"
+              ? TelegramCorrectionEmail({
+                  firstName: firstReg.first_name,
+                  seminars: lines,
+                })
+              : ReceivedEmail({
+                  firstName: firstReg.first_name,
+                  lastName: firstReg.last_name,
+                  seminars: lines,
+                  paymentMethod: firstReg.payment_method || "Non spécifié",
+                })
       );
 
       const subject =
-        template === "payment"
+        customSubject ||
+        (template === "payment"
           ? "Confirmation de paiement — inscription confirmée"
           : template === "reminder"
             ? "Rappel — paiement en attente pour votre inscription"
-            : lines.length > 1
-              ? "Confirmation de vos inscriptions"
-              : "Confirmation de votre inscription";
+            : template === "course_link"
+              ? `Lien du premier cours — ${lines[0].title}${lines.length > 1 ? " (et plus)" : ""}`
+              : template === "telegram_link"
+                ? "Rejoignez votre groupe Telegram dédié"
+                : template === "telegram_correction"
+                  ? "Information importante concernant le groupe Telegram"
+                  : lines.length > 1
+                  ? "Confirmation de vos inscriptions"
+                  : "Confirmation de votre inscription");
 
       try {
         const { data, error: sendError } = await resend.emails.send({
@@ -148,7 +209,7 @@ export async function sendConfirmationEmail({
 
         console.log(`[Email] Resend success for ${email}. ID: ${data.id}`);
 
-        if (template === "payment" || template === "reminder") {
+        if (template === "payment" || template === "reminder" || template === "course_link" || template === "telegram_correction") {
           results.push({ email, status: "success", messageId: data.id });
           continue;
         }

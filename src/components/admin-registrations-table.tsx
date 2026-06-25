@@ -1,11 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Search, NotebookPen, Layers } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import { Search, NotebookPen, Layers, Send, Loader2, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AdminRegistrationDrawer } from "@/components/admin-registration-drawer";
 import { AdminAddParticipant } from "@/components/admin-add-participant";
+import { AdminBulkEmailDrawer } from "@/components/admin-bulk-email-drawer";
 import { RegistrationStatusSelect } from "@/components/registration-status-select";
+import { sendConfirmationEmail } from "@/app/actions/send-confirmation-email";
 import {
   paymentStatuses,
   paymentStatusLabels,
@@ -62,13 +65,19 @@ function seminarSummary(regs: Registration[]): string {
 export function AdminRegistrationsTable({
   registrations,
   seminars,
+  tenant,
 }: {
   registrations: Registration[];
   seminars: Seminar[];
+  tenant: string;
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [seminarFilter, setSeminarFilter] = useState<string | "all">("all");
   const [selected, setSelected] = useState<Person | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [isSendingTelegram, startSendingTelegram] = useTransition();
+  const [isSendingCorrection, startSendingCorrection] = useTransition();
 
   const persons = useMemo(() => groupByPerson(registrations), [registrations]);
 
@@ -78,6 +87,11 @@ export function AdminRegistrationsTable({
       if (
         statusFilter !== "all" &&
         !p.regs.some((r) => (r.payment_status ?? "pending") === statusFilter)
+      )
+        return false;
+      if (
+        seminarFilter !== "all" &&
+        !p.regs.some((r) => r.seminar_id === seminarFilter)
       )
         return false;
       if (!q) return true;
@@ -96,7 +110,107 @@ export function AdminRegistrationsTable({
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [persons, query, statusFilter]);
+  }, [persons, query, statusFilter, seminarFilter]);
+
+  const filteredIds = useMemo(
+    () => {
+      const activePersons = selectedKeys.size > 0
+        ? filtered.filter(p => selectedKeys.has(p.key))
+        : filtered;
+      return activePersons.flatMap((p) =>
+        p.regs
+          .filter((r) => seminarFilter === "all" || r.seminar_id === seminarFilter)
+          .map((r) => r.id),
+      );
+    },
+    [filtered, selectedKeys, seminarFilter],
+  );
+
+  // Correction Telegram : uniquement les personnes inscrites EXCLUSIVEMENT au
+  // séminaire sélectionné (exclut les inscrits aux deux séminaires).
+  const correctionPersons = useMemo(() => {
+    if (seminarFilter === "all") return [];
+    const activePersons = selectedKeys.size > 0
+      ? filtered.filter((p) => selectedKeys.has(p.key))
+      : filtered;
+    return activePersons.filter((p) =>
+      p.regs.every((r) => r.seminar_id === seminarFilter),
+    );
+  }, [filtered, selectedKeys, seminarFilter]);
+
+  const correctionIds = useMemo(
+    () => correctionPersons.flatMap((p) => p.regs.map((r) => r.id)),
+    [correctionPersons],
+  );
+
+  const handleSendTelegramLinks = () => {
+    if (filteredIds.length === 0) return;
+
+    const targetCount = selectedKeys.size > 0 ? selectedKeys.size : filtered.length;
+    const confirmMsg = `Envoyer le lien Telegram à ${targetCount} personne${targetCount > 1 ? "s" : ""} ? (Le lien sera choisi automatiquement selon le genre)`;
+    
+    if (!window.confirm(confirmMsg)) return;
+
+    startSendingTelegram(async () => {
+      const res = await sendConfirmationEmail({
+        registrationIds: filteredIds,
+        template: "telegram_link",
+        force: true,
+      });
+
+      if (res.success) {
+        const sent = res.results?.filter((r) => r.status === "success").length ?? 0;
+        const skipped = (res.results?.length ?? 0) - sent;
+        toast.success(
+          `Lien Telegram envoyé à ${sent} personne${sent > 1 ? "s" : ""}.` +
+            (skipped > 0 ? ` ${skipped} ignorée${skipped > 1 ? "s" : ""} (pas de lien pour ce séminaire).` : ""),
+        );
+        setSelectedKeys(new Set());
+      } else {
+        toast.error(res.error || "Échec de l'envoi.");
+      }
+    });
+  };
+
+  const handleSendCorrection = () => {
+    if (correctionIds.length === 0) return;
+
+    const targetCount = correctionPersons.length;
+    const confirmMsg = `Envoyer le mail de correction Telegram à ${targetCount} personne${targetCount > 1 ? "s" : ""} inscrite${targetCount > 1 ? "s" : ""} uniquement à ce séminaire ? (leur demander de ne pas rejoindre l'ancien lien)`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    startSendingCorrection(async () => {
+      const res = await sendConfirmationEmail({
+        registrationIds: correctionIds,
+        template: "telegram_correction",
+        force: true,
+      });
+
+      if (res.success) {
+        const sent = res.results?.filter((r) => r.status === "success").length ?? 0;
+        toast.success(`Mail de correction envoyé à ${sent} personne${sent > 1 ? "s" : ""}.`);
+        setSelectedKeys(new Set());
+      } else {
+        toast.error(res.error || "Échec de l'envoi.");
+      }
+    });
+  };
+
+  const toggleAll = () => {
+    if (selectedKeys.size === filtered.length) {
+      setSelectedKeys(new Set());
+    } else {
+      setSelectedKeys(new Set(filtered.map((p) => p.key)));
+    }
+  };
+
+  const toggleOne = (key: string) => {
+    const next = new Set(selectedKeys);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    setSelectedKeys(next);
+  };
 
   return (
     <section className="overflow-hidden rounded-2xl border border-[#d6cfc0] bg-[#fbefdf] shadow-[0_14px_28px_rgba(32,40,25,0.06)]">
@@ -110,10 +224,49 @@ export function AdminRegistrationsTable({
               {filtered.length} / {persons.length} personne{persons.length > 1 ? "s" : ""}
               <span className="ml-2 text-[12px] text-[#5e6353]">
                 · {registrations.length} inscription{registrations.length > 1 ? "s" : ""}
+                {selectedKeys.size > 0 && (
+                  <span className="ml-2 font-medium text-[#546b43]">
+                    ({selectedKeys.size} sélectionnée{selectedKeys.size > 1 ? "s" : ""})
+                  </span>
+                )}
               </span>
             </p>
           </div>
-          <AdminAddParticipant seminars={seminars} />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <button
+              type="button"
+              onClick={handleSendTelegramLinks}
+              disabled={isSendingTelegram || (selectedKeys.size === 0 && filtered.length === 0)}
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-[#cdc5b3] bg-[#fbefdf] px-4 text-sm font-medium text-[#3c4130] transition hover:border-[#0088cc] hover:text-[#0088cc] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0088cc]/40 disabled:opacity-50 sm:w-auto"
+            >
+              {isSendingTelegram ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Send className="size-4" />
+              )}
+              Lien Telegram
+            </button>
+            <button
+              type="button"
+              onClick={handleSendCorrection}
+              disabled={isSendingCorrection || correctionIds.length === 0}
+              title={seminarFilter === "all" ? "Sélectionne d'abord un séminaire pour cibler le bon groupe" : correctionIds.length === 0 ? "Aucune personne inscrite uniquement à ce séminaire" : undefined}
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-[#cdc5b3] bg-[#fbefdf] px-4 text-sm font-medium text-[#3c4130] transition hover:border-[#a8321b] hover:text-[#a8321b] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#a8321b]/40 disabled:opacity-50 sm:w-auto"
+            >
+              {isSendingCorrection ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <AlertTriangle className="size-4" />
+              )}
+              Correction Telegram
+            </button>
+            <AdminBulkEmailDrawer
+              registrationIds={filteredIds}
+              count={selectedKeys.size > 0 ? selectedKeys.size : filtered.length}
+              isSelectionActive={selectedKeys.size > 0}
+            />
+            <AdminAddParticipant seminars={seminars} tenant={tenant} />
+          </div>
         </div>
 
         <div className="mt-3 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
@@ -146,6 +299,26 @@ export function AdminRegistrationsTable({
             ))}
           </div>
         </div>
+
+        {seminars.length > 1 && (
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
+            <FilterChip
+              active={seminarFilter === "all"}
+              onClick={() => setSeminarFilter("all")}
+            >
+              Tous séminaires
+            </FilterChip>
+            {seminars.map((s) => (
+              <FilterChip
+                key={s.id}
+                active={seminarFilter === s.id}
+                onClick={() => setSeminarFilter(s.id)}
+              >
+                <span className="block max-w-[14rem] truncate">{s.title}</span>
+              </FilterChip>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Mobile cards */}
@@ -206,6 +379,14 @@ export function AdminRegistrationsTable({
         <table className="w-full text-left text-sm">
           <thead className="bg-[#f2eadf] text-[11px] uppercase tracking-[0.18em] text-[#5e6353]">
             <tr>
+              <th className="px-5 py-3 w-10">
+                <input
+                  type="checkbox"
+                  checked={filtered.length > 0 && selectedKeys.size === filtered.length}
+                  onChange={toggleAll}
+                  className="size-4 rounded border-[#cdc5b3] bg-[#fbefdf] text-[#546b43] focus:ring-[#546b43]/25"
+                />
+              </th>
               <th className="px-5 py-3">Nom</th>
               <th className="px-5 py-3">Email</th>
               <th className="px-5 py-3">Séminaire</th>
@@ -225,8 +406,19 @@ export function AdminRegistrationsTable({
                 <tr
                   key={p.key}
                   onClick={() => setSelected(p)}
-                  className="cursor-pointer border-t border-[#e6ddca] transition hover:bg-[#f7eedd]"
+                  className={cn(
+                    "cursor-pointer border-t border-[#e6ddca] transition hover:bg-[#f7eedd]",
+                    selectedKeys.has(p.key) && "bg-[#546b43]/5"
+                  )}
                 >
+                  <td className="px-5 py-3" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedKeys.has(p.key)}
+                      onChange={() => toggleOne(p.key)}
+                      className="size-4 rounded border-[#cdc5b3] bg-[#fbefdf] text-[#546b43] focus:ring-[#546b43]/25"
+                    />
+                  </td>
                   <td className="px-5 py-3 font-serif text-[#202819]">
                     <span className="flex items-center gap-2">
                       {multi && (
@@ -270,7 +462,7 @@ export function AdminRegistrationsTable({
             {filtered.length === 0 && (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={9}
                   className="px-5 py-10 text-center text-sm text-[#5e6353]"
                 >
                   Aucun inscrit.

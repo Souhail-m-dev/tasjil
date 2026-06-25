@@ -39,6 +39,8 @@ export type SeminarDisplay = {
   flyerSrc: string | null;
 };
 
+export const seminarSchedule = "Lundi, mercredi & vendredi · 19h30 – 20h30";
+
 export const teacher = {
   name: "Dr. AbdelRahman Abu Abdelwahab",
   nameUpper: "DR. ABDELRAHMAN ABU ABDELWAHAB",

@@ -11,6 +11,7 @@ import {
 } from "@react-email/components";
 import * as React from "react";
 import type { SeminarLine } from "./ReceivedEmail";
+import { BOTH_SEMINARS_PRICE_EUR } from "@/lib/schemas/registration";
 
 interface ReminderEmailProps {
   firstName: string;
@@ -38,10 +39,12 @@ export const ReminderEmail = ({
   const method = (paymentMethod || "").toLowerCase();
   const fullName = `${firstName} ${lastName}`.trim();
   const multiple = seminars.length > 1;
-  const total = seminars.reduce(
-    (sum, s) => sum + (typeof s.price === "number" ? s.price : 0),
-    0,
-  );
+  const total = seminars.length === 2 
+    ? BOTH_SEMINARS_PRICE_EUR 
+    : seminars.reduce(
+        (sum, s) => sum + (typeof s.price === "number" ? s.price : 0),
+        0,
+      );
   const chosenLabel = methodLabels[method] ?? "celui indiqué lors de l'inscription";
 
   return (
@@ -65,7 +68,7 @@ export const ReminderEmail = ({
             {seminars.map((s, i) => (
               <Text key={i} style={listItem}>
                 • {s.title}
-                {s.price != null && (
+                {s.price != null && !multiple && (
                   <span style={priceTag}> — {s.price} €</span>
                 )}
               </Text>

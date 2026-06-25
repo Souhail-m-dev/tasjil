@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 import { formatDate, formatPrice } from "@/lib/format";
 import { submitRegistration } from "@/app/actions/submit-registration";
 import { Ornament } from "@/components/ui/ornament";
-import { getSeminarDisplay, teacher } from "@/lib/seminar-display";
+import { getSeminarDisplay, teacher, seminarSchedule } from "@/lib/seminar-display";
 import {
   BOTH_SEMINARS_OPTION_ID,
   BOTH_SEMINARS_PRICE_EUR,
@@ -68,7 +68,7 @@ export function RegistrationForm({
   initialSeminarId?: string;
 }) {
   const router = useRouter();
-  const [stepIndex, setStepIndex] = useState(initialSeminarId ? 1 : 0);
+  const [stepIndex, setStepIndex] = useState(0);
   const [direction, setDirection] = useState<"fwd" | "back">("fwd");
   const [isPending, startTransition] = useTransition();
   const submittingRef = useRef(false);
@@ -447,7 +447,7 @@ function SeminarsStep({
           <QHead
             eyebrow="Les séminaires"
             title="Quel séminaire souhaitez-vous suivre ?"
-            sub="Vous pouvez choisir un séminaire — ou les deux pour le pack complet."
+            sub={`Tous les cours ont lieu ${seminarSchedule.toLowerCase()}. Choisissez un séminaire — ou les deux pour le pack complet.`}
           />
           <div className="mt-7 grid gap-2.5">
             <ChoiceCard
@@ -871,6 +871,7 @@ function ReviewStep({
       <div className="mt-7 overflow-hidden rounded-xl border border-[var(--line-soft)] bg-[var(--paper-cream)]">
         <ReviewRow label="Séminaire(s)" value={seminarLabel} first />
         <ReviewRow label="Dates" value={dates} />
+        <ReviewRow label="Horaires" value={seminarSchedule} />
         <ReviewRow label="Prix" value={price} />
         <ReviewRow
           label="Nom"

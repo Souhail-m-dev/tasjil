@@ -6,6 +6,7 @@ import {
   genders,
   paymentMethods,
   paymentMethodLabels,
+  BOTH_SEMINARS_PRICE_EUR,
 } from "@/lib/schemas/registration";
 import {
   paymentStatuses,
@@ -96,7 +97,9 @@ export function AdminRegistrationFields({
               <div className="mt-1.5 flex items-center justify-between gap-3 border-t border-[#d6cfc0] pt-1.5 text-[14px] font-semibold text-[#202819]">
                 <span>Total</span>
                 <span className="text-[#546b43]">
-                  {combinedSeminars.reduce((sum, s) => sum + (s.price ?? 0), 0)} €
+                  {combinedSeminars.length === 2 
+                    ? BOTH_SEMINARS_PRICE_EUR 
+                    : combinedSeminars.reduce((sum, s) => sum + (s.price ?? 0), 0)} €
                 </span>
               </div>
             )}

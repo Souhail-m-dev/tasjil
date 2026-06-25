@@ -10,6 +10,7 @@ import {
   Text,
 } from "@react-email/components";
 import * as React from "react";
+import { BOTH_SEMINARS_PRICE_EUR } from "@/lib/schemas/registration";
 
 export interface SeminarLine {
   title: string;
@@ -36,6 +37,12 @@ export const ReceivedEmail = ({
   const method = (paymentMethod || "").toLowerCase();
   const fullName = `${firstName} ${lastName}`.trim();
   const multiple = seminars.length > 1;
+  const total = seminars.length === 2 
+    ? BOTH_SEMINARS_PRICE_EUR 
+    : seminars.reduce(
+        (sum, s) => sum + (typeof s.price === "number" ? s.price : 0),
+        0,
+      );
 
   return (
     <Html>
@@ -59,12 +66,18 @@ export const ReceivedEmail = ({
             {seminars.map((s, i) => (
               <Text key={i} style={listItem}>
                 • {s.title}
-                {s.price != null && (
+                {s.price != null && !multiple && (
                   <span style={priceTag}> — {s.price} €</span>
                 )}
               </Text>
             ))}
           </Section>
+
+          {total > 0 && (
+            <Text style={text}>
+              Le montant total de votre inscription est de : <strong>{total} €</strong>.
+            </Text>
+          )}
 
           <Hr style={hr} />
 
