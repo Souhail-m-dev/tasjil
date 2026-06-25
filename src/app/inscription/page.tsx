@@ -1,10 +1,15 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getTenant } from "@/lib/tenants";
 import { RegistrationForm } from "@/components/registration-form";
 
-export const metadata = {
-  title: "Inscription — Séminaires",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { brand, metadata } = await getTenant();
+  return {
+    title: `Inscription — ${brand.shortName}`,
+    description: metadata.description,
+  };
+}
 
 export default async function InscriptionPage({
   searchParams,
