@@ -25,11 +25,6 @@ export const seminaire: TenantConfig = {
     youtube: null,
     tazkiyaUrl: null,
   },
-  email: {
-    from: "noreply@abouabdelwahab.com",
-    replyTo: "dr.abdelrahman.abou.abdelwahab@gmail.com",
-    fromName: "Inscription Séminaire",
-  },
   terminology: {
     unit: "séminaire",
     cycle: "session",

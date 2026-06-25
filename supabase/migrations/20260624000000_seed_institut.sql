@@ -38,5 +38,5 @@ on conflict (slug) do nothing;
 -- Institut admin (gates is_admin_for('institut')). Auth user must be created
 -- separately in Supabase Auth with this same email.
 insert into public.admins (email, role, tenant)
-values ('admin@drmiloud.com', 'admin', 'institut')
+values ('souhax69@gmail.com', 'admin', 'institut')
 on conflict (email) do nothing;

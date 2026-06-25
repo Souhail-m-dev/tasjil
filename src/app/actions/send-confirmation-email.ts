@@ -1,7 +1,7 @@
 "use server";
 
 import { render } from "@react-email/render";
-import { resend } from "@/lib/email/resend";
+import { resendForKey } from "@/lib/email/resend";
 import { ReceivedEmail } from "@/lib/email/templates/ReceivedEmail";
 import { PaymentConfirmedEmail } from "@/lib/email/templates/PaymentConfirmedEmail";
 import { ReminderEmail } from "@/lib/email/templates/ReminderEmail";
@@ -9,7 +9,6 @@ import { CourseLinkEmail } from "@/lib/email/templates/CourseLinkEmail";
 import { TelegramLinkEmail } from "@/lib/email/templates/TelegramLinkEmail";
 import { TelegramCorrectionEmail } from "@/lib/email/templates/TelegramCorrectionEmail";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { tenantBySlug } from "@/lib/tenants";
 
 // Liens Telegram par séminaire (id) puis par genre.
 // Seul Hisn al-Muslim a ses groupes. Le séminaire "Beaux noms d'Allah" suivra.
@@ -49,10 +48,6 @@ export async function sendConfirmationEmail({
       console.error("[Email] supabaseAdmin not initialized");
       return { success: false, error: "Database configuration error" };
     }
-    if (!resend) {
-      console.error("[Email] resend client not initialized");
-      return { success: false, error: "Email configuration error" };
-    }
 
     console.log(`[Email] Sending for ${registrationIds.length} registrations`);
 
@@ -87,10 +82,22 @@ export async function sendConfirmationEmail({
 
     for (const [email, userRegs] of Object.entries(groupedByEmail)) {
       const firstReg = userRegs[0];
-      const { email: sender } = tenantBySlug(firstReg.tenant);
-      const fromEmail = sender.from;
-      const fromName = sender.fromName;
-      const replyTo = sender.replyTo;
+      const { data: tenantRow } = await supabaseAdmin
+        .from("tenants")
+        .select("resend_api_key, email_from, email_reply_to, email_from_name")
+        .eq("slug", firstReg.tenant)
+        .single();
+
+      const resendKey = tenantRow?.resend_api_key ?? process.env.RESEND_API_KEY;
+      if (!tenantRow || !resendKey) {
+        results.push({ email, status: "failed", error: `Email config missing for tenant '${firstReg.tenant}'` });
+        continue;
+      }
+
+      const resend = resendForKey(resendKey);
+      const fromEmail = tenantRow.email_from;
+      const fromName = tenantRow.email_from_name;
+      const replyTo = tenantRow.email_reply_to;
 
       const now = new Date();
       const needsSending = force || userRegs.some(reg => {

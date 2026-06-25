@@ -27,11 +27,6 @@ export type TenantConfig = {
     youtube: string | null;
     tazkiyaUrl: string | null;
   };
-  email: {
-    from: string;
-    replyTo: string;
-    fromName: string;
-  };
   terminology: {
     /** singular unit of study, e.g. "séminaire" | "niveau" */
     unit: string;

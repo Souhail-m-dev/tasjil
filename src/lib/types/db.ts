@@ -36,6 +36,33 @@ export type Database = {
         }
         Relationships: []
       }
+      tenants: {
+        Row: {
+          created_at: string
+          email_from: string
+          email_from_name: string
+          email_reply_to: string | null
+          resend_api_key: string | null
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          email_from: string
+          email_from_name: string
+          email_reply_to?: string | null
+          resend_api_key?: string | null
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          email_from?: string
+          email_from_name?: string
+          email_reply_to?: string | null
+          resend_api_key?: string | null
+          slug?: string
+        }
+        Relationships: []
+      }
       registrations: {
         Row: {
           agreed_attendance: boolean

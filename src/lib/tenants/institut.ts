@@ -21,11 +21,6 @@ export const institut: TenantConfig = {
     youtube: null,
     tazkiyaUrl: "https://youtu.be/OHx5UcYWW0Y",
   },
-  email: {
-    from: "noreply@drmiloud.com",
-    replyTo: "admin@drmiloud.com",
-    fromName: "Institut Cheikh Dr Miloud",
-  },
   terminology: {
     unit: "niveau",
     cycle: "année",
