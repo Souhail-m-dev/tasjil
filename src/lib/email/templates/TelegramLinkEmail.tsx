@@ -12,17 +12,20 @@ import {
 } from "@react-email/components";
 import * as React from "react";
 import type { SeminarLine } from "./ReceivedEmail";
+import type { EmailBrand } from "@/lib/email/brand";
 
 interface TelegramLinkEmailProps {
   firstName: string;
   seminars: SeminarLine[];
   telegramLink: string;
+  brand: EmailBrand;
 }
 
 export const TelegramLinkEmail = ({
   firstName,
   seminars,
   telegramLink,
+  brand,
 }: TelegramLinkEmailProps) => {
   const multiple = seminars.length > 1;
 
@@ -39,7 +42,7 @@ export const TelegramLinkEmail = ({
           <Heading style={h1}>Bienvenue, {firstName}.</Heading>
 
           <Text style={text}>
-            Voici le lien pour rejoindre le <strong>groupe Telegram</strong> dédié à {multiple ? "vos séminaires" : "votre séminaire"} :
+            Voici le lien pour rejoindre le <strong>groupe Telegram</strong> dédié à {multiple ? `vos ${brand.unitPlural}` : `votre ${brand.unit}`} :
           </Text>
 
           <Section style={section}>
@@ -71,7 +74,7 @@ export const TelegramLinkEmail = ({
             <br />
             Bārak Allāhu fikum  🤲🌹.
             <br />
-            Dr. AbdelRahman Abou Abdelwahab
+            {brand.signature}
           </Text>
         </Container>
       </Body>

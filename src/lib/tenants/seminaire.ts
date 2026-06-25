@@ -29,6 +29,12 @@ export const seminaire: TenantConfig = {
     unit: "séminaire",
     cycle: "session",
   },
+  mail: {
+    signature: "Dr. AbdelRahman Abou Abdelwahab",
+    paypalEmail: "zerroug.djallel@gmail.com",
+    revolutHandle: "mohasou69",
+    whatsapp: "+33 7 81 69 14 96",
+  },
   schedule: "Lundi, mercredi & vendredi · 19h30 – 20h30",
   theme: {
     emerald: "#1d1e30",

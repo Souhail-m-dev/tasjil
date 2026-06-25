@@ -25,6 +25,12 @@ export const institut: TenantConfig = {
     unit: "niveau",
     cycle: "année",
   },
+  mail: {
+    signature: "Dr. Miloud Lamri",
+    paypalEmail: null,
+    revolutHandle: null,
+    whatsapp: null,
+  },
   schedule: "Niveau 1 : jeudi 19h00 · Niveau 2 : vendredi 19h00",
   theme: {
     emerald: "#15293f",

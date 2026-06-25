@@ -11,17 +11,20 @@ import {
 } from "@react-email/components";
 import * as React from "react";
 import type { SeminarLine } from "./ReceivedEmail";
+import type { EmailBrand } from "@/lib/email/brand";
 
 interface PaymentConfirmedEmailProps {
   firstName: string;
   lastName: string;
   seminars: SeminarLine[];
+  brand: EmailBrand;
 }
 
 export const PaymentConfirmedEmail = ({
   firstName,
   lastName,
   seminars,
+  brand,
 }: PaymentConfirmedEmailProps) => {
   const fullName = `${firstName} ${lastName}`.trim();
   const multiple = seminars.length > 1;
@@ -41,7 +44,7 @@ export const PaymentConfirmedEmail = ({
           <Text style={text}>
             Votre paiement a bien été reçu. L&apos;inscription de{" "}
             <strong>{fullName}</strong>{" "}
-            {multiple ? "aux séminaires suivants est confirmée" : "au séminaire suivant est confirmée"} :
+            {multiple ? `aux ${brand.unitPlural} suivants est confirmée` : `au ${brand.unit} suivant est confirmée`} :
           </Text>
 
           <Section style={section}>
@@ -74,7 +77,7 @@ export const PaymentConfirmedEmail = ({
           <Text style={footer}>
             Bārak Allāhu fikum  🤲🌹.
             <br />
-            Dr. AbdelRahman Abou Abdelwahab
+            {brand.signature}
           </Text>
         </Container>
       </Body>

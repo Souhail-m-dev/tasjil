@@ -12,6 +12,7 @@ import {
 } from "@react-email/components";
 import * as React from "react";
 import type { SeminarLine } from "./ReceivedEmail";
+import type { EmailBrand } from "@/lib/email/brand";
 
 interface CourseLinkEmailProps {
   firstName: string;
@@ -19,6 +20,7 @@ interface CourseLinkEmailProps {
   courseLink: string;
   telegramLink?: string;
   customContent?: string;
+  brand: EmailBrand;
 }
 
 export const CourseLinkEmail = ({
@@ -27,6 +29,7 @@ export const CourseLinkEmail = ({
   courseLink,
   telegramLink,
   customContent,
+  brand,
 }: CourseLinkEmailProps) => {
   const multiple = seminars.length > 1;
 
@@ -43,7 +46,7 @@ export const CourseLinkEmail = ({
           <Heading style={h1}>Bienvenue, {firstName}.</Heading>
 
           <Text style={text}>
-            Nous sommes heureux de vous compter parmi nous pour {multiple ? "ces séminaires" : "ce séminaire"} :
+            Nous sommes heureux de vous compter parmi nous pour {multiple ? `ces ${brand.unitPlural}` : `ce ${brand.unit}`} :
           </Text>
 
           <Section style={section}>
@@ -96,7 +99,7 @@ export const CourseLinkEmail = ({
             <br />
             Bārak Allāhu fikum  🤲🌹.
             <br />
-            Dr. AbdelRahman Abou Abdelwahab
+            {brand.signature}
           </Text>
         </Container>
       </Body>

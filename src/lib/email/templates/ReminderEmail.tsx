@@ -11,6 +11,7 @@ import {
 } from "@react-email/components";
 import * as React from "react";
 import type { SeminarLine } from "./ReceivedEmail";
+import type { EmailBrand } from "@/lib/email/brand";
 import { BOTH_SEMINARS_PRICE_EUR } from "@/lib/schemas/registration";
 
 interface ReminderEmailProps {
@@ -18,11 +19,8 @@ interface ReminderEmailProps {
   lastName: string;
   seminars: SeminarLine[];
   paymentMethod: string;
+  brand: EmailBrand;
 }
-
-const PAYPAL_EMAIL = "zerroug.djallel@gmail.com";
-const REVOLUT_HANDLE = "mohasou69";
-const CASH_WHATSAPP = "+33 7 81 69 14 96";
 
 const methodLabels: Record<string, string> = {
   paypal: "PayPal",
@@ -35,6 +33,7 @@ export const ReminderEmail = ({
   lastName,
   seminars,
   paymentMethod,
+  brand,
 }: ReminderEmailProps) => {
   const method = (paymentMethod || "").toLowerCase();
   const fullName = `${firstName} ${lastName}`.trim();
@@ -61,7 +60,7 @@ export const ReminderEmail = ({
 
           <Text style={text}>
             Pour rappel, l&apos;inscription de <strong>{fullName}</strong>{" "}
-            {multiple ? "aux séminaires suivants a bien été enregistrée" : "au séminaire suivant a bien été enregistrée"} :
+            {multiple ? `aux ${brand.unitPlural} suivants a bien été enregistrée` : `au ${brand.unit} suivant a bien été enregistrée`} :
           </Text>
 
           <Section style={section}>
@@ -87,87 +86,99 @@ export const ReminderEmail = ({
 
           <Hr style={hr} />
 
-          <Heading style={h2}>Mode de paiement choisi</Heading>
+          {brand.payment ? (
+            <>
+              <Heading style={h2}>Mode de paiement choisi</Heading>
 
-          <Text style={text}>
-            Vous aviez choisi : <strong>{chosenLabel}</strong>.
-          </Text>
+              <Text style={text}>
+                Vous aviez choisi : <strong>{chosenLabel}</strong>.
+              </Text>
 
-          {method === "paypal" && (
+              {method === "paypal" && brand.paypalEmail && (
+                <>
+                  <Text style={text}>
+                    <strong>PayPal</strong> — adresse mail pour le paiement :{" "}
+                    <a href={`mailto:${brand.paypalEmail}`} style={link}>
+                      {brand.paypalEmail}
+                    </a>
+                  </Text>
+                  <Section style={warnBox}>
+                    <Text style={warnText}>
+                      ⚠️ <strong>TRÈS IMPORTANT</strong> — effectuez le paiement en{" "}
+                      <strong>envoi d&apos;argent entre proches</strong> et{" "}
+                      <strong>SANS AUCUN commentaire</strong>, sinon le paiement
+                      risque d&apos;être bloqué. 🙏
+                    </Text>
+                  </Section>
+                </>
+              )}
+
+              {method === "revolut" && brand.revolutHandle && (
+                <Text style={text}>
+                  <strong>Revolut</strong> : <code style={code}>@{brand.revolutHandle}</code>
+                </Text>
+              )}
+
+              {method === "espece" && brand.whatsapp && (
+                <Text style={text}>
+                  <strong>En espèces</strong> — merci de prendre contact par WhatsApp
+                  sur ce numéro pour convenir d&apos;une remise en main propre :{" "}
+                  <a href={`https://wa.me/${brand.whatsapp.replace(/[^0-9]/g, "")}`} style={link}>
+                    {brand.whatsapp}
+                  </a>
+                </Text>
+              )}
+
+              <Hr style={hr} />
+
+              <Heading style={h2}>Autres méthodes de paiement</Heading>
+
+              {method !== "paypal" && brand.paypalEmail && (
+                <>
+                  <Text style={text}>
+                    <strong>PayPal</strong> — adresse mail pour le paiement :{" "}
+                    <a href={`mailto:${brand.paypalEmail}`} style={link}>
+                      {brand.paypalEmail}
+                    </a>
+                  </Text>
+                  <Section style={warnBox}>
+                    <Text style={warnText}>
+                      ⚠️ <strong>TRÈS IMPORTANT</strong> — effectuez le paiement en{" "}
+                      <strong>envoi d&apos;argent entre proches</strong> et{" "}
+                      <strong>SANS AUCUN commentaire</strong>, sinon le paiement
+                      risque d&apos;être bloqué. 🙏
+                    </Text>
+                  </Section>
+                </>
+              )}
+
+              {method !== "revolut" && brand.revolutHandle && (
+                <Text style={text}>
+                  <strong>Revolut</strong> : <code style={code}>@{brand.revolutHandle}</code>
+                </Text>
+              )}
+
+              {method !== "espece" && brand.whatsapp && (
+                <Text style={text}>
+                  <strong>En espèces</strong> — merci de prendre contact par WhatsApp
+                  sur ce numéro pour convenir d&apos;une remise en main propre :{" "}
+                  <a href={`https://wa.me/${brand.whatsapp.replace(/[^0-9]/g, "")}`} style={link}>
+                    {brand.whatsapp}
+                  </a>
+                </Text>
+              )}
+
+              <Hr style={hr} />
+            </>
+          ) : (
             <>
               <Text style={text}>
-                <strong>PayPal</strong> — adresse mail pour le paiement :{" "}
-                <a href={`mailto:${PAYPAL_EMAIL}`} style={link}>
-                  {PAYPAL_EMAIL}
-                </a>
+                Les modalités de règlement des frais d&apos;inscription vous seront
+                communiquées par notre équipe. Pour toute question, répondez à ce mail.
               </Text>
-              <Section style={warnBox}>
-                <Text style={warnText}>
-                  ⚠️ <strong>TRÈS IMPORTANT</strong> — effectuez le paiement en{" "}
-                  <strong>envoi d&apos;argent entre proches</strong> et{" "}
-                  <strong>SANS AUCUN commentaire</strong>, sinon le paiement
-                  risque d&apos;être bloqué. 🙏
-                </Text>
-              </Section>
+              <Hr style={hr} />
             </>
           )}
-
-          {method === "revolut" && (
-            <Text style={text}>
-              <strong>Revolut</strong> : <code style={code}>@{REVOLUT_HANDLE}</code>
-            </Text>
-          )}
-
-          {method === "espece" && (
-            <Text style={text}>
-              <strong>En espèces</strong> — merci de prendre contact par WhatsApp
-              sur ce numéro pour convenir d&apos;une remise en main propre :{" "}
-              <a href={`https://wa.me/${CASH_WHATSAPP.replace(/[^0-9]/g, "")}`} style={link}>
-                {CASH_WHATSAPP}
-              </a>
-            </Text>
-          )}
-
-          <Hr style={hr} />
-
-          <Heading style={h2}>Autres méthodes de paiement</Heading>
-
-          {method !== "paypal" && (
-            <>
-              <Text style={text}>
-                <strong>PayPal</strong> — adresse mail pour le paiement :{" "}
-                <a href={`mailto:${PAYPAL_EMAIL}`} style={link}>
-                  {PAYPAL_EMAIL}
-                </a>
-              </Text>
-              <Section style={warnBox}>
-                <Text style={warnText}>
-                  ⚠️ <strong>TRÈS IMPORTANT</strong> — effectuez le paiement en{" "}
-                  <strong>envoi d&apos;argent entre proches</strong> et{" "}
-                  <strong>SANS AUCUN commentaire</strong>, sinon le paiement
-                  risque d&apos;être bloqué. 🙏
-                </Text>
-              </Section>
-            </>
-          )}
-
-          {method !== "revolut" && (
-            <Text style={text}>
-              <strong>Revolut</strong> : <code style={code}>@{REVOLUT_HANDLE}</code>
-            </Text>
-          )}
-
-          {method !== "espece" && (
-            <Text style={text}>
-              <strong>En espèces</strong> — merci de prendre contact par WhatsApp
-              sur ce numéro pour convenir d&apos;une remise en main propre :{" "}
-              <a href={`https://wa.me/${CASH_WHATSAPP.replace(/[^0-9]/g, "")}`} style={link}>
-                {CASH_WHATSAPP}
-              </a>
-            </Text>
-          )}
-
-          <Hr style={hr} />
 
           <Text style={text}>
             Pour toute question ou demande particulière, merci de{" "}
@@ -177,7 +188,7 @@ export const ReminderEmail = ({
           <Text style={footer}>
             Bārak Allāhu fikum  🤲🌹.
             <br />
-            Dr. AbdelRahman Abou Abdelwahab
+            {brand.signature}
           </Text>
         </Container>
       </Body>

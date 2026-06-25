@@ -11,15 +11,18 @@ import {
 } from "@react-email/components";
 import * as React from "react";
 import type { SeminarLine } from "./ReceivedEmail";
+import type { EmailBrand } from "@/lib/email/brand";
 
 interface TelegramCorrectionEmailProps {
   firstName: string;
   seminars: SeminarLine[];
+  brand: EmailBrand;
 }
 
 export const TelegramCorrectionEmail = ({
   firstName,
   seminars,
+  brand,
 }: TelegramCorrectionEmailProps) => {
   return (
     <Html>
@@ -34,7 +37,7 @@ export const TelegramCorrectionEmail = ({
           <Heading style={h1}>Une précision, {firstName}.</Heading>
 
           <Text style={text}>
-            Vous êtes inscrit(e) au séminaire :
+            Vous êtes inscrit(e) au {brand.unit} :
           </Text>
 
           <Section style={section}>
@@ -51,7 +54,7 @@ export const TelegramCorrectionEmail = ({
           </Text>
 
           <Text style={text}>
-            Le lien du groupe Telegram dédié à ce séminaire vous sera envoyé en
+            Le lien du groupe Telegram dédié à ce {brand.unit} vous sera envoyé en
             temps voulu, in shâ&apos; Allah.
           </Text>
 
@@ -67,7 +70,7 @@ export const TelegramCorrectionEmail = ({
             <br />
             Bārak Allāhu fikum  🤲🌹.
             <br />
-            Dr. AbdelRahman Abou Abdelwahab
+            {brand.signature}
           </Text>
         </Container>
       </Body>

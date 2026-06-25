@@ -33,6 +33,13 @@ export type TenantConfig = {
     /** overarching cycle, e.g. "session" | "année" */
     cycle: string;
   };
+  mail: {
+    /** signature line at the bottom of transactional emails */
+    signature: string;
+    paypalEmail: string | null;
+    revolutHandle: string | null;
+    whatsapp: string | null;
+  };
   schedule: string;
   theme: TenantTheme;
   features: {

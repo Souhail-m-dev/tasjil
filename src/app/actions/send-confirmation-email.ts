@@ -9,6 +9,8 @@ import { CourseLinkEmail } from "@/lib/email/templates/CourseLinkEmail";
 import { TelegramLinkEmail } from "@/lib/email/templates/TelegramLinkEmail";
 import { TelegramCorrectionEmail } from "@/lib/email/templates/TelegramCorrectionEmail";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { tenantBySlug } from "@/lib/tenants";
+import type { EmailBrand } from "@/lib/email/brand";
 
 // Liens Telegram par séminaire (id) puis par genre.
 // Seul Hisn al-Muslim a ses groupes. Le séminaire "Beaux noms d'Allah" suivra.
@@ -99,6 +101,17 @@ export async function sendConfirmationEmail({
       const fromName = tenantRow.email_from_name;
       const replyTo = tenantRow.email_reply_to;
 
+      const tenantConfig = tenantBySlug(firstReg.tenant);
+      const brand: EmailBrand = {
+        signature: tenantConfig.mail.signature,
+        unit: tenantConfig.terminology.unit,
+        unitPlural: `${tenantConfig.terminology.unit}s`,
+        payment: tenantConfig.features.payment,
+        paypalEmail: tenantConfig.mail.paypalEmail,
+        revolutHandle: tenantConfig.mail.revolutHandle,
+        whatsapp: tenantConfig.mail.whatsapp,
+      };
+
       const now = new Date();
       const needsSending = force || userRegs.some(reg => {
         const sentAt = reg.confirmation_email_sent_at ? new Date(reg.confirmation_email_sent_at) : null;
@@ -138,6 +151,7 @@ export async function sendConfirmationEmail({
               firstName: firstReg.first_name,
               lastName: firstReg.last_name,
               seminars: lines,
+              brand,
             })
           : template === "reminder"
             ? ReminderEmail({
@@ -145,6 +159,7 @@ export async function sendConfirmationEmail({
                 lastName: firstReg.last_name,
                 seminars: lines,
                 paymentMethod: firstReg.payment_method || "Non spécifié",
+                brand,
               })
             : template === "course_link"
               ? CourseLinkEmail({
@@ -153,23 +168,27 @@ export async function sendConfirmationEmail({
                   courseLink: courseLink || "",
                   telegramLink: telegramLink,
                   customContent: customContent,
+                  brand,
                 })
             : template === "telegram_link"
               ? TelegramLinkEmail({
                   firstName: firstReg.first_name,
                   seminars: lines,
                   telegramLink: resolvedTelegramLink as string,
+                  brand,
                 })
             : template === "telegram_correction"
               ? TelegramCorrectionEmail({
                   firstName: firstReg.first_name,
                   seminars: lines,
+                  brand,
                 })
               : ReceivedEmail({
                   firstName: firstReg.first_name,
                   lastName: firstReg.last_name,
                   seminars: lines,
                   paymentMethod: firstReg.payment_method || "Non spécifié",
+                  brand,
                 })
       );
 
