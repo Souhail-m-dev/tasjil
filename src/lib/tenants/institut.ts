@@ -42,6 +42,8 @@ export const institut: TenantConfig = {
     zoom: false,
     presentiel: true,
     certificate: true,
+    payment: false,
+    extendedProfile: true,
   },
   metadata: {
     title: "Institut Cheikh Dr Miloud — Inscription année 2026-2027",

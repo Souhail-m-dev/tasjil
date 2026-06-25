@@ -6,7 +6,7 @@ import { sendConfirmationEmail } from "@/app/actions/send-confirmation-email";
 import {
   BOTH_SEMINARS_OPTION_ID,
   normalizeRegistration,
-  registrationSchema,
+  makeRegistrationSchema,
   type RegistrationInput,
 } from "@/lib/schemas/registration";
 
@@ -17,15 +17,18 @@ type SubmitResult =
 export async function submitRegistration(
   input: RegistrationInput,
 ): Promise<SubmitResult> {
-  const parsed = registrationSchema.safeParse(input);
-  if (!parsed.success) {
-    return { ok: false, error: "Données invalides." };
-  }
   if (!supabaseAdmin) {
     return { ok: false, error: "Configuration serveur manquante." };
   }
 
-  const { slug: tenant } = await getTenant();
+  const tenantConfig = await getTenant();
+  const tenant = tenantConfig.slug;
+  const parsed = makeRegistrationSchema({
+    payment: tenantConfig.features.payment,
+  }).safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Données invalides." };
+  }
   const data = parsed.data;
   const payload = normalizeRegistration(data);
   const isBundle = data.seminar_id === BOTH_SEMINARS_OPTION_ID;
@@ -95,7 +98,7 @@ export async function submitRegistration(
     ok: true,
     redirect: {
       seminar: slug,
-      payment: data.payment_method,
+      payment: data.payment_method ?? "",
       name: data.first_name,
     },
   };

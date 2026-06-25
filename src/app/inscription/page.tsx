@@ -12,12 +12,12 @@ export default async function InscriptionPage({
   searchParams: Promise<{ seminar?: string }>;
 }) {
   const { seminar: slug } = await searchParams;
-  const { slug: tenant } = await getTenant();
+  const tenantConfig = await getTenant();
   const supabase = await createClient();
   const { data: seminars, error } = await supabase
     .from("seminars")
     .select("*")
-    .eq("tenant", tenant)
+    .eq("tenant", tenantConfig.slug)
     .order("start_date", { ascending: true });
 
   if (error) {
@@ -38,6 +38,18 @@ export default async function InscriptionPage({
     <RegistrationForm
       seminars={seminars ?? []}
       initialSeminarId={initialSeminarId}
+      tenant={{
+        slug: tenantConfig.slug,
+        unit: tenantConfig.terminology.unit,
+        schedule: tenantConfig.schedule,
+        logoSrc: tenantConfig.brand.logoSrc,
+        features: {
+          bundle: tenantConfig.features.bundle,
+          zoom: tenantConfig.features.zoom,
+          payment: tenantConfig.features.payment,
+          extendedProfile: tenantConfig.features.extendedProfile,
+        },
+      }}
     />
   );
 }

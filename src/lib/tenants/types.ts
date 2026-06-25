@@ -40,6 +40,10 @@ export type TenantConfig = {
     zoom: boolean;
     presentiel: boolean;
     certificate: boolean;
+    /** collect a payment method during registration */
+    payment: boolean;
+    /** collect extended profile (birth date, phone, address, availability, prior group) */
+    extendedProfile: boolean;
   };
   metadata: {
     title: string;

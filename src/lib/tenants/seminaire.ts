@@ -46,6 +46,8 @@ export const seminaire: TenantConfig = {
     zoom: true,
     presentiel: false,
     certificate: false,
+    payment: true,
+    extendedProfile: false,
   },
   metadata: {
     title: "Tasjîl — Séminaires du Dr. AbdelRahman",

@@ -65,12 +65,17 @@ export type Database = {
       }
       registrations: {
         Row: {
+          address: string | null
           agreed_attendance: boolean
           agreed_payment: boolean
           agreed_rules: boolean
           agreed_truth: boolean
+          available_days: Json | null
+          birth_date: string | null
+          city: string | null
           confirmation_email_message_id: string | null
           confirmation_email_sent_at: string | null
+          country: string | null
           created_at: string | null
           email: string
           first_name: string
@@ -83,6 +88,9 @@ export type Database = {
           notes: string | null
           payment_method: string | null
           payment_status: string | null
+          phone: string | null
+          postal_code: string | null
+          previous_group: string | null
           seminar_id: string | null
           signature_text: string | null
           signed_at: string | null
@@ -91,12 +99,17 @@ export type Database = {
           zoom_email: string | null
         }
         Insert: {
+          address?: string | null
           agreed_attendance?: boolean
           agreed_payment?: boolean
           agreed_rules?: boolean
           agreed_truth?: boolean
+          available_days?: Json | null
+          birth_date?: string | null
+          city?: string | null
           confirmation_email_message_id?: string | null
           confirmation_email_sent_at?: string | null
+          country?: string | null
           created_at?: string | null
           email: string
           first_name: string
@@ -109,6 +122,9 @@ export type Database = {
           notes?: string | null
           payment_method?: string | null
           payment_status?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          previous_group?: string | null
           seminar_id?: string | null
           signature_text?: string | null
           signed_at?: string | null
@@ -117,12 +133,17 @@ export type Database = {
           zoom_email?: string | null
         }
         Update: {
+          address?: string | null
           agreed_attendance?: boolean
           agreed_payment?: boolean
           agreed_rules?: boolean
           agreed_truth?: boolean
+          available_days?: Json | null
+          birth_date?: string | null
+          city?: string | null
           confirmation_email_message_id?: string | null
           confirmation_email_sent_at?: string | null
+          country?: string | null
           created_at?: string | null
           email?: string
           first_name?: string
@@ -135,6 +156,9 @@ export type Database = {
           notes?: string | null
           payment_method?: string | null
           payment_status?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          previous_group?: string | null
           seminar_id?: string | null
           signature_text?: string | null
           signed_at?: string | null

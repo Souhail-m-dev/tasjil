@@ -25,15 +25,19 @@ import { cn } from "@/lib/utils";
 import { formatDate, formatPrice } from "@/lib/format";
 import { submitRegistration } from "@/app/actions/submit-registration";
 import { Ornament } from "@/components/ui/ornament";
-import { getSeminarDisplay, teacher, seminarSchedule } from "@/lib/seminar-display";
+import { getSeminarDisplay } from "@/lib/seminar-display";
 import {
   BOTH_SEMINARS_OPTION_ID,
   BOTH_SEMINARS_PRICE_EUR,
-  registrationSchema,
-  walkthroughSteps,
+  makeRegistrationSchema,
+  buildSteps,
   paymentMethodLabels,
   paymentMethods,
   genders,
+  weekdays,
+  weekdayLabels,
+  previousGroups,
+  previousGroupLabels,
   type RegistrationInput,
   type PaymentMethod,
   type WalkthroughStep,
@@ -42,7 +46,18 @@ import type { Database } from "@/lib/types/db";
 
 type Seminar = Database["public"]["Tables"]["seminars"]["Row"];
 
-const totalSteps = walkthroughSteps.length;
+export type RegistrationFormTenant = {
+  slug: string;
+  unit: string;
+  schedule: string;
+  logoSrc: string;
+  features: {
+    bundle: boolean;
+    zoom: boolean;
+    payment: boolean;
+    extendedProfile: boolean;
+  };
+};
 
 const paymentDescriptions: Record<PaymentMethod, string> = {
   paypal: "Adresse PayPal envoyée par email après inscription.",
@@ -63,9 +78,11 @@ function isBothSeminarsSelection(seminarId: string) {
 export function RegistrationForm({
   seminars,
   initialSeminarId,
+  tenant,
 }: {
   seminars: Seminar[];
   initialSeminarId?: string;
+  tenant: RegistrationFormTenant;
 }) {
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
@@ -73,8 +90,13 @@ export function RegistrationForm({
   const [isPending, startTransition] = useTransition();
   const submittingRef = useRef(false);
 
+  const schema = useMemo(
+    () => makeRegistrationSchema({ payment: tenant.features.payment }),
+    [tenant.features.payment],
+  );
+
   const form = useForm<RegistrationInput>({
-    resolver: zodResolver(registrationSchema),
+    resolver: zodResolver(schema),
     mode: "onTouched",
     defaultValues: {
       seminar_id: initialSeminarId ?? "",
@@ -83,6 +105,14 @@ export function RegistrationForm({
       email: "",
       telegram_handle: "",
       zoom_email: "",
+      birth_date: "",
+      phone: "",
+      address: "",
+      postal_code: "",
+      city: "",
+      country: "",
+      available_days: [],
+      previous_group: "",
       gender: undefined as unknown as RegistrationInput["gender"],
       payment_method: undefined as unknown as RegistrationInput["payment_method"],
       agreed_attendance: false as unknown as true,
@@ -94,7 +124,31 @@ export function RegistrationForm({
 
   const { control, handleSubmit, watch, trigger, setValue } = form;
   const values = watch();
-  const step = walkthroughSteps[stepIndex];
+
+  const selectedSeminar = useMemo(
+    () => seminars.find((s) => s.id === values.seminar_id),
+    [seminars, values.seminar_id],
+  );
+  const isBundle = isBothSeminarsSelection(values.seminar_id);
+  const isNiveau2 = !!selectedSeminar?.slug?.endsWith("niveau-2");
+
+  const steps = useMemo(
+    () =>
+      buildSteps({
+        unit: tenant.unit,
+        zoom: tenant.features.zoom,
+        payment: tenant.features.payment,
+        extendedProfile: tenant.features.extendedProfile,
+        isNiveau2,
+      }),
+    [tenant, isNiveau2],
+  );
+  const totalSteps = steps.length;
+  const step = steps[Math.min(stepIndex, totalSteps - 1)];
+
+  useEffect(() => {
+    if (stepIndex > totalSteps - 1) setStepIndex(totalSteps - 1);
+  }, [stepIndex, totalSteps]);
 
   useEffect(() => {
     if (step.kind === "review") {
@@ -102,11 +156,7 @@ export function RegistrationForm({
     }
   }, [step.kind, trigger]);
 
-  const selectedSeminar = useMemo(
-    () => seminars.find((s) => s.id === values.seminar_id),
-    [seminars, values.seminar_id],
-  );
-  const isBundle = isBothSeminarsSelection(values.seminar_id);
+  const bundle = tenant.features.bundle;
 
   const goNext = useCallback(async () => {
     if (step.kind === "review") return;
@@ -143,7 +193,7 @@ export function RegistrationForm({
 
   const skipOptional = useCallback(() => {
     if (!step.optional) return;
-    setValue(step.key as "telegram_handle" | "zoom_email", "");
+    setValue(step.key as keyof RegistrationInput, "" as never);
     if (stepIndex < totalSteps - 1) {
       setDirection("fwd");
       setStepIndex((i) => i + 1);
@@ -190,7 +240,7 @@ export function RegistrationForm({
       <header className="relative z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-4 border-b border-[var(--line-soft)] bg-[var(--paper)]/90 px-4 py-3 backdrop-blur sm:px-6">
         <div className="flex items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--ink-fade)]">
           <Image
-            src={teacher.logoSrc}
+            src={tenant.logoSrc}
             alt=""
             width={26}
             height={26}
@@ -247,6 +297,9 @@ export function RegistrationForm({
             values={values}
             selectedSeminar={selectedSeminar}
             isBundle={isBundle}
+            bundle={bundle}
+            schedule={tenant.schedule}
+            unit={tenant.unit}
             onAdvance={goNext}
           />
 
@@ -325,6 +378,9 @@ function StepContent({
   values,
   selectedSeminar,
   isBundle,
+  bundle,
+  schedule,
+  unit,
   onAdvance,
 }: {
   step: WalkthroughStep;
@@ -334,16 +390,36 @@ function StepContent({
   values: RegistrationInput;
   selectedSeminar?: Seminar;
   isBundle: boolean;
+  bundle: boolean;
+  schedule: string;
+  unit: string;
   onAdvance: () => void;
 }) {
   if (step.kind === "seminar-picker") {
-    return <SeminarsStep control={control} seminars={seminars} />;
+    return (
+      <SeminarsStep
+        control={control}
+        seminars={seminars}
+        bundle={bundle}
+        schedule={schedule}
+        unit={unit}
+      />
+    );
   }
   if (step.kind === "text") {
     return <TextStep step={step} control={control} values={values} />;
   }
+  if (step.kind === "date") {
+    return <DateStep step={step} control={control} />;
+  }
   if (step.kind === "email") {
     return <EmailStep step={step} control={control} values={values} />;
+  }
+  if (step.kind === "choice-days") {
+    return <DaysStep step={step} control={control} />;
+  }
+  if (step.kind === "choice-prev-group") {
+    return <PrevGroupStep step={step} control={control} />;
   }
   if (step.kind === "choice-gender") {
     return <GenderStep control={control} onAdvance={onAdvance} />;
@@ -367,6 +443,7 @@ function StepContent({
         seminars={seminars}
         values={values}
         isBundle={isBundle}
+        schedule={schedule}
       />
     );
   }
@@ -434,9 +511,15 @@ const walkInputClass =
 function SeminarsStep({
   control,
   seminars,
+  bundle,
+  schedule,
+  unit,
 }: {
   control: ReturnType<typeof useForm<RegistrationInput>>["control"];
   seminars: Seminar[];
+  bundle: boolean;
+  schedule: string;
+  unit: string;
 }) {
   return (
     <Controller
@@ -445,23 +528,29 @@ function SeminarsStep({
       render={({ field, fieldState }) => (
         <>
           <QHead
-            eyebrow="Les séminaires"
-            title="Quel séminaire souhaitez-vous suivre ?"
-            sub={`Tous les cours ont lieu ${seminarSchedule.toLowerCase()}. Choisissez un séminaire — ou les deux pour le pack complet.`}
+            eyebrow={`Le ${unit}`}
+            title={`Quel ${unit} souhaitez-vous suivre ?`}
+            sub={
+              bundle
+                ? `Horaires : ${schedule}. Choisissez un ${unit} — ou les deux pour le pack complet.`
+                : `Horaires : ${schedule}. Choisissez votre ${unit}.`
+            }
           />
           <div className="mt-7 grid gap-2.5">
-            <ChoiceCard
-              letter="•"
-              selected={field.value === BOTH_SEMINARS_OPTION_ID}
-              onSelect={() => field.onChange(BOTH_SEMINARS_OPTION_ID)}
-              title={`Les 2 séminaires — ${formatPrice(BOTH_SEMINARS_PRICE_EUR)}`}
-              meta={
-                seminars.length >= 2
-                  ? `${seminars[0]?.title} + ${seminars[1]?.title}`
-                  : "Pack complet"
-              }
-              variant="card"
-            />
+            {bundle && (
+              <ChoiceCard
+                letter="•"
+                selected={field.value === BOTH_SEMINARS_OPTION_ID}
+                onSelect={() => field.onChange(BOTH_SEMINARS_OPTION_ID)}
+                title={`Les 2 séminaires — ${formatPrice(BOTH_SEMINARS_PRICE_EUR)}`}
+                meta={
+                  seminars.length >= 2
+                    ? `${seminars[0]?.title} + ${seminars[1]?.title}`
+                    : "Pack complet"
+                }
+                variant="card"
+              />
+            )}
             {seminars.map((s, idx) => {
               const display = getSeminarDisplay(s.slug, s.title, s.author);
               return (
@@ -591,6 +680,137 @@ function EmailStep({
               className={walkInputClass}
               style={{ fontSize: "clamp(17px, 5vw, 28px)" }}
             />
+          </div>
+          <FieldError message={fieldState.error?.message} />
+        </>
+      )}
+    />
+  );
+}
+
+function DateStep({
+  step,
+  control,
+}: {
+  step: Extract<WalkthroughStep, { kind: "date" }>;
+  control: ReturnType<typeof useForm<RegistrationInput>>["control"];
+}) {
+  return (
+    <Controller
+      name={step.key}
+      control={control}
+      render={({ field, fieldState }) => (
+        <>
+          <QHead eyebrow="Naissance" title={step.title} sub={step.hint} />
+          <div className="mt-7">
+            <input
+              {...field}
+              value={field.value ?? ""}
+              type="date"
+              autoFocus
+              className={walkInputClass}
+              style={{ fontSize: "clamp(17px, 5vw, 28px)" }}
+            />
+          </div>
+          <FieldError message={fieldState.error?.message} />
+        </>
+      )}
+    />
+  );
+}
+
+function DaysStep({
+  step,
+  control,
+}: {
+  step: Extract<WalkthroughStep, { kind: "choice-days" }>;
+  control: ReturnType<typeof useForm<RegistrationInput>>["control"];
+}) {
+  return (
+    <Controller
+      name="available_days"
+      control={control}
+      render={({ field, fieldState }) => {
+        const current = (field.value ?? []) as (typeof weekdays)[number][];
+        const toggle = (day: (typeof weekdays)[number]) => {
+          field.onChange(
+            current.includes(day)
+              ? current.filter((d) => d !== day)
+              : [...current, day],
+          );
+        };
+        return (
+          <>
+            <QHead eyebrow="Disponibilités" title={step.title} sub={step.hint} />
+            <div className="mt-7 grid gap-2.5">
+              {weekdays.map((day) => {
+                const checked = current.includes(day);
+                return (
+                  <label
+                    key={day}
+                    className={cn(
+                      "flex cursor-pointer items-center gap-3.5 rounded-xl border-[1.5px] bg-[var(--paper-cream)] px-4 py-3.5 transition",
+                      checked
+                        ? "border-[var(--emerald)] bg-[color-mix(in_srgb,var(--paper-cream)_70%,var(--emerald)_30%)]"
+                        : "border-[var(--line-soft)] hover:border-[var(--gold)]",
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggle(day)}
+                      className="sr-only"
+                    />
+                    <span
+                      className={cn(
+                        "flex size-[22px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] transition",
+                        checked
+                          ? "border-[var(--emerald)] bg-[var(--emerald)] text-[var(--gold-soft)]"
+                          : "border-[var(--ink-fade)] bg-transparent",
+                      )}
+                    >
+                      {checked && <CheckCircle2 className="size-3.5" strokeWidth={3} />}
+                    </span>
+                    <span className="font-serif text-[16px] font-medium text-[var(--ink-900)]">
+                      {weekdayLabels[day]}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+            <FieldError message={fieldState.error?.message} />
+          </>
+        );
+      }}
+    />
+  );
+}
+
+function PrevGroupStep({
+  step,
+  control,
+}: {
+  step: Extract<WalkthroughStep, { kind: "choice-prev-group" }>;
+  control: ReturnType<typeof useForm<RegistrationInput>>["control"];
+}) {
+  return (
+    <Controller
+      name="previous_group"
+      control={control}
+      render={({ field, fieldState }) => (
+        <>
+          <QHead eyebrow="Niveau 1" title={step.title} sub={step.hint} />
+          <div className="mt-7 grid gap-2.5">
+            {previousGroups.map((opt, idx) => (
+              <ChoiceCard
+                key={opt}
+                letter={String.fromCharCode(65 + idx)}
+                selected={field.value === opt}
+                onSelect={() => field.onChange(opt)}
+                title={previousGroupLabels[opt]}
+                variant="card"
+              />
+            ))}
           </div>
           <FieldError message={fieldState.error?.message} />
         </>
@@ -839,15 +1059,25 @@ function ReviewStep({
   seminars,
   values,
   isBundle,
+  schedule,
 }: {
   seminar?: Seminar;
   seminars: Seminar[];
   values: RegistrationInput;
   isBundle: boolean;
+  schedule: string;
 }) {
   const seminarLabel = isBundle
     ? "Pack 2 séminaires"
     : seminar?.title ?? "—";
+  const address = [values.address, values.postal_code, values.city, values.country]
+    .map((v) => v?.trim())
+    .filter(Boolean)
+    .join(", ");
+  const days =
+    values.available_days && values.available_days.length > 0
+      ? values.available_days.map((d) => weekdayLabels[d]).join(", ")
+      : "";
   const dates = isBundle
     ? seminars
         .map(
@@ -869,9 +1099,9 @@ function ReviewStep({
         sub="Une dernière vérification avant de confirmer."
       />
       <div className="mt-7 overflow-hidden rounded-xl border border-[var(--line-soft)] bg-[var(--paper-cream)]">
-        <ReviewRow label="Séminaire(s)" value={seminarLabel} first />
+        <ReviewRow label="Formation" value={seminarLabel} first />
         <ReviewRow label="Dates" value={dates} />
-        <ReviewRow label="Horaires" value={seminarSchedule} />
+        <ReviewRow label="Horaires" value={schedule} />
         <ReviewRow label="Prix" value={price} />
         <ReviewRow
           label="Nom"
@@ -882,16 +1112,34 @@ function ReviewStep({
           value={values.gender === "homme" ? "Homme" : "Femme"}
         />
         <ReviewRow label="Email" value={values.email} />
+        {values.birth_date && (
+          <ReviewRow label="Naissance" value={values.birth_date} />
+        )}
+        {values.phone && <ReviewRow label="Téléphone" value={values.phone} />}
+        {address && <ReviewRow label="Adresse" value={address} />}
+        {days && <ReviewRow label="Disponibilités" value={days} />}
+        {values.previous_group && (
+          <ReviewRow
+            label="Groupe précédent"
+            value={
+              previousGroupLabels[
+                values.previous_group as keyof typeof previousGroupLabels
+              ] ?? values.previous_group
+            }
+          />
+        )}
         {values.telegram_handle && (
           <ReviewRow label="Telegram" value={`@${values.telegram_handle}`} />
         )}
         {values.zoom_email && (
           <ReviewRow label="Email Zoom" value={values.zoom_email} />
         )}
-        <ReviewRow
-          label="Paiement"
-          value={paymentMethodLabels[values.payment_method]}
-        />
+        {values.payment_method && (
+          <ReviewRow
+            label="Paiement"
+            value={paymentMethodLabels[values.payment_method]}
+          />
+        )}
         <ReviewRow
           label="Engagement"
           value={
