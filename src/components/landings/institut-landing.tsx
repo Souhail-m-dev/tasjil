@@ -29,6 +29,39 @@ const MATIERES = [
   { ar: "الحديث", fr: "Hadîth", sub: "La science prophétique" },
 ];
 
+const TEMOIGNAGES = [
+  {
+    quote:
+      "Les cours étaient magnifiques, bien expliqués et posément. Quelques soucis de connexion, mais rien de désagréable — avec l'expérience, ce sera de mieux en mieux inchâ'Allah.",
+    meta: "Étudiant · session précédente",
+  },
+  {
+    quote:
+      "Les modérateurs se sont bien occupés de nous, par mail comme par Telegram, toujours à l'écoute. Et le déroulement du cours bien encadré, micros et vidéos des sœurs bloqués pour éviter toute fitna. Bravo.",
+    meta: "Étudiante · session précédente",
+  },
+  {
+    quote:
+      "J'ai beaucoup apprécié les quiz qui nous permettaient de vérifier nos acquis entre les cours. La forme était à la fois ludique et pédagogique — important dans une formation à distance.",
+    meta: "Étudiant · session précédente",
+  },
+  {
+    quote:
+      "J'ai aimé les vidéos pour rattraper les cours manqués. Le top du top, les quiz pour réviser : tous les éléments étaient là pour comprendre le livre et réussir l'examen.",
+    meta: "Étudiant · session précédente",
+  },
+  {
+    quote:
+      "Telegram était super bien organisé, avec les chapitres — je n'ai jamais vu cela dans les autres cours que j'ai suivis. Et le travail des sœurs sur les notes de cours, qu'Allah les récompense.",
+    meta: "Étudiante · session précédente",
+  },
+  {
+    quote:
+      "Le temps laissé aux questions/réponses par le Shaykh à la fin de chaque cours, afin de bien comprendre — qu'Allah le préserve. En gros, beaucoup de points positifs.",
+    meta: "Étudiant · session précédente",
+  },
+];
+
 export default async function InstitutLanding() {
   const { brand, prof, schedule } = await getTenant();
 
@@ -276,6 +309,34 @@ export default async function InstitutLanding() {
         </div>
       </section>
 
+      {/* TÉMOIGNAGES */}
+      <section className="border-b border-[var(--line-soft)] bg-[var(--paper-deep)]">
+        <div className="mx-auto w-full max-w-[1180px] px-4 py-16 sm:px-8 sm:py-24">
+          <div className="text-center">
+            <div className="text-[10px] uppercase tracking-[0.32em] text-[var(--emerald)] sm:text-[11px]">
+              Témoignages
+            </div>
+            <h2 className="mt-3 font-display text-[1.9rem] leading-tight text-[var(--emerald-deep)] sm:text-[2.6rem]">
+              Ce qu&apos;en disent les étudiants
+            </h2>
+            <Ornament className="my-6" />
+            <p className="mx-auto max-w-[44ch] font-serif text-[14px] leading-[1.65] text-[var(--ink-soft,#434843)] sm:text-[16px]">
+              Retours des sessions précédentes.
+            </p>
+          </div>
+
+          <div className="mt-12 grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-3">
+            {TEMOIGNAGES.map((t) => (
+              <TestimonialCard key={t.meta + t.quote.slice(0, 16)} quote={t.quote} meta={t.meta} />
+            ))}
+          </div>
+
+          <p className="mt-10 text-center font-serif text-[13px] italic text-[var(--ink-fade)] sm:text-[14px]">
+            « Qu&apos;Allah récompense le Shaykh, les équipes qui l&apos;entourent et les étudiants. »
+          </p>
+        </div>
+      </section>
+
       {/* RÉSEAUX */}
       {prof.telegram && (
         <section className="bg-[var(--emerald)] text-[var(--paper-cream)]">
@@ -374,6 +435,26 @@ export default async function InstitutLanding() {
         </Link>
       </div>
     </main>
+  );
+}
+
+function TestimonialCard({ quote, meta }: { quote: string; meta: string }) {
+  return (
+    <figure className="relative flex h-full flex-col rounded-2xl border border-[var(--line-soft)] bg-[var(--paper-cream)] p-6 shadow-[0_14px_30px_rgba(13,31,20,0.06)] sm:p-7">
+      <CornerFlourish color="var(--gold)" />
+      <div
+        aria-hidden
+        className="font-display text-[3rem] leading-none text-[var(--gold)] sm:text-[4rem]"
+      >
+        “
+      </div>
+      <blockquote className="mt-2 font-serif text-[15px] leading-[1.65] text-[var(--ink-900)] sm:text-[16px]">
+        {quote}
+      </blockquote>
+      <figcaption className="mt-5 text-[10px] uppercase tracking-[0.24em] text-[var(--emerald)] sm:text-[11px]">
+        {meta}
+      </figcaption>
+    </figure>
   );
 }
 

@@ -1,7 +1,7 @@
 import type { TenantConfig } from "./types";
 
-// NOTE: DA (logo + palette) not finalized. Theme below is a placeholder
-// distinct from the seminaire (deep blue / bronze). Swap when assets land.
+// NOTE: logo placeholder (/institut/logo.png) — swap when asset lands.
+// Palette finalized (teal/sage/gold) per brand spec.
 export const institut: TenantConfig = {
   slug: "institut",
   hosts: ["tasjil.drmiloud.com"],
@@ -33,15 +33,15 @@ export const institut: TenantConfig = {
   },
   schedule: "Niveau 1 : jeudi 19h00 · Niveau 2 : vendredi 19h00",
   theme: {
-    emerald: "#15293f",
-    emeraldDeep: "#0e1c2c",
-    gold: "#b8894b",
-    goldSoft: "#d9b483",
-    paper: "#faf7f1",
-    paperCream: "#f6f1e8",
-    paperDeep: "#efe8da",
-    lineSoft: "rgba(20, 30, 45, 0.12)",
-    inkFade: "#6b7280",
+    emerald: "#2F5D62",
+    emeraldDeep: "#244A4E",
+    gold: "#C8A75A",
+    goldSoft: "#DDC084",
+    paper: "#FAFAF8",
+    paperCream: "#FFFFFF",
+    paperDeep: "#F1F1ED",
+    lineSoft: "rgba(138, 148, 150, 0.30)",
+    inkFade: "#8A9496",
   },
   features: {
     bundle: false,
